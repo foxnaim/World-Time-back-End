@@ -7,11 +7,13 @@ import { ScheduleModule } from '@nestjs/schedule';
 import { validate } from './common/config';
 import { PrismaModule } from './common/prisma.module';
 import { RedisModule } from './common/redis/redis.module';
+import { RedisService } from './common/redis/redis.service';
 import { JwtAuthGuard } from './common/guards/jwt-auth.guard';
 import { SentryModule } from './common/filters/sentry.filter';
 import { LoggerModule, CorrelationMiddleware } from './common/logger';
 import { LoggingInterceptor } from './common/interceptors/logging.interceptor';
 import { UserThrottlerGuard } from './common/throttle/user-throttler.guard';
+import { RedisThrottlerStorage } from './common/throttle/redis-throttler.storage';
 
 import { AuthModule } from './modules/auth/auth.module';
 import { CompanyModule } from './modules/company/company.module';
@@ -36,12 +38,16 @@ import { AdminModule } from './modules/admin/admin.module';
       validate,
     }),
     LoggerModule,
-    ThrottlerModule.forRoot([
-      {
-        ttl: 60_000,
-        limit: 60,
-      },
-    ]),
+    // Throttler uses a Redis-backed storage when REDIS_URL is configured so
+    // buckets are shared across instances; the storage transparently falls
+    // back to an in-memory Map when RedisService reports degraded.
+    ThrottlerModule.forRootAsync({
+      inject: [RedisService],
+      useFactory: (redis: RedisService) => ({
+        throttlers: [{ ttl: 60_000, limit: 60 }],
+        storage: new RedisThrottlerStorage(redis),
+      }),
+    }),
     ScheduleModule.forRoot(),
     SentryModule,
     RedisModule,

@@ -7,23 +7,64 @@
 #
 # The final image runs the compiled NestJS server as the unprivileged `node`
 # user on port 4000.
+#
+# Multi-platform build example (amd64 + arm64):
+#     docker buildx build --platform linux/amd64,linux/arm64 \
+#         -f backend/Dockerfile -t foxnaim/worktime-backend:latest --push .
+
+# Consumers may override these at build time:
+#   docker build --build-arg NODE_VERSION=20-alpine --build-arg PNPM_VERSION=9.0.0 ...
+ARG NODE_VERSION=22-alpine
+ARG PNPM_VERSION=10.33.0
 
 ###############################################################################
 # Stage 1: base — pinned Node + pnpm toolchain shared by later stages.
 ###############################################################################
-FROM node:22-alpine AS base
+FROM node:${NODE_VERSION} AS base
+
+# Re-declare ARG inside stage so it is visible to RUN instructions below.
+ARG PNPM_VERSION
 
 # Native-module prerequisites (prisma engines, bcrypt, etc.).
 RUN apk add --no-cache libc6-compat openssl
 
 # Enable corepack and pin pnpm to match the monorepo's packageManager field.
-RUN corepack enable && corepack prepare pnpm@10.33.0 --activate
+RUN corepack enable && corepack prepare pnpm@${PNPM_VERSION} --activate
 
 WORKDIR /repo
 
 ENV CI=1 \
     PNPM_HOME=/root/.local/share/pnpm \
     PATH=/root/.local/share/pnpm:$PATH
+
+###############################################################################
+# Stage 1b: dev — hot-reload development image.
+#
+# Used by docker-compose for local development. Source code is expected to be
+# bind-mounted at /repo so edits on the host trigger NestJS watch-mode rebuilds
+# inside the container. Only manifests are baked into the image so the
+# node_modules layer can be cached independently of source churn.
+###############################################################################
+FROM base AS dev
+
+COPY pnpm-workspace.yaml package.json turbo.json tsconfig.base.json ./
+COPY backend/package.json            ./backend/package.json
+COPY packages/config/package.json    ./packages/config/package.json
+COPY packages/database/package.json  ./packages/database/package.json
+COPY packages/types/package.json     ./packages/types/package.json
+COPY packages/ui/package.json        ./packages/ui/package.json
+
+# Non-frozen install so the dev image can be built before a lockfile exists
+# and tolerates manifest drift without blocking local iteration.
+RUN --mount=type=cache,id=pnpm-store,target=/root/.local/share/pnpm/store \
+    pnpm install
+
+ENV NODE_ENV=development
+
+# 4000 = NestJS HTTP, 9229 = Node inspector for attaching a debugger.
+EXPOSE 4000 9229
+
+CMD ["pnpm","--filter","@worktime/api","dev"]
 
 ###############################################################################
 # Stage 2: deps — install the full workspace dependency graph.
@@ -87,16 +128,27 @@ RUN --mount=type=cache,id=pnpm-store,target=/root/.local/share/pnpm/store \
 ###############################################################################
 # Stage 4: runtime — minimal image that runs the compiled app.
 ###############################################################################
-FROM node:22-alpine AS runtime
+FROM node:${NODE_VERSION} AS runtime
+
+# Re-declare ARGs inside the final stage so LABEL substitution works.
+ARG PNPM_VERSION
+ARG GIT_COMMIT=unknown
+
+# OCI image metadata — populated at build time via --build-arg GIT_COMMIT=$(git rev-parse HEAD).
+LABEL org.opencontainers.image.title="worktime-backend" \
+      org.opencontainers.image.description="WorkTime NestJS API server" \
+      org.opencontainers.image.revision="${GIT_COMMIT}" \
+      org.opencontainers.image.source="https://github.com/foxnaim/World-Time-back-End" \
+      org.opencontainers.image.licenses="MIT"
 
 ENV NODE_ENV=production \
     PORT=4000 \
     PATH=/root/.local/share/pnpm:$PATH
 
-# wget for HEALTHCHECK, openssl + libc6-compat for Prisma engines,
+# curl for HEALTHCHECK, openssl + libc6-compat for Prisma engines,
 # tini for clean PID 1 signal handling.
-RUN apk add --no-cache wget openssl libc6-compat tini \
- && corepack enable && corepack prepare pnpm@10.33.0 --activate
+RUN apk add --no-cache curl openssl libc6-compat tini \
+ && corepack enable && corepack prepare pnpm@${PNPM_VERSION} --activate
 
 WORKDIR /repo
 
@@ -129,8 +181,11 @@ USER node
 
 EXPOSE 4000
 
+# curl-based liveness probe. API_PORT defaults to the container's PORT env.
 HEALTHCHECK --interval=30s --timeout=5s --start-period=20s --retries=3 \
-    CMD wget --quiet --spider http://localhost:4000/api/health || exit 1
+    CMD curl -fsS http://localhost:${API_PORT:-4000}/api/healthz/live || exit 1
 
+# tini reaps zombies and forwards SIGTERM/SIGINT to the Node process so
+# graceful shutdown hooks fire correctly.
 ENTRYPOINT ["/sbin/tini", "--", "/usr/local/bin/docker-entrypoint.sh"]
 CMD ["node", "backend/dist/main.js"]
