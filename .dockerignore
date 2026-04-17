@@ -1,0 +1,40 @@
+# Dependencies — always reinstalled inside the image.
+node_modules
+**/node_modules
+
+# Build output — produced fresh in the build stage.
+dist
+**/dist
+.turbo
+**/.turbo
+
+# Tests & coverage reports — not needed in the runtime image.
+coverage
+**/coverage
+
+# Local environment files — secrets must never leak into an image layer.
+.env
+.env.local
+.env.*
+!.env.example
+
+# Logs.
+*.log
+**/*.log
+logs
+
+# Editor / OS cruft.
+.DS_Store
+.vscode
+.idea
+
+# Git metadata — not needed at runtime.
+.git
+.gitignore
+
+# Docker files themselves (avoid context bloat / recursive inclusion).
+Dockerfile
+**/Dockerfile
+.dockerignore
+**/.dockerignore
+docker-compose*.yml
