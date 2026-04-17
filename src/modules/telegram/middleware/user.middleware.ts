@@ -23,10 +23,8 @@ export class UserMiddleware {
           user = await this.prisma.user.create({
             data: {
               telegramId,
-              name:
-                [from.first_name, from.last_name].filter(Boolean).join(' ') ||
-                from.username ||
-                'Telegram user',
+              firstName: from.first_name || from.username || 'Telegram user',
+              lastName: from.last_name ?? null,
               username: from.username ?? null,
             },
           });

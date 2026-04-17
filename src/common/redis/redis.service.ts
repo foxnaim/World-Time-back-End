@@ -1,7 +1,6 @@
-import { Injectable, OnModuleDestroy, OnModuleInit } from '@nestjs/common';
+import { Injectable, Logger, OnModuleDestroy, OnModuleInit } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import Redis, { ChainableCommander } from 'ioredis';
-import { InjectPinoLogger, PinoLogger } from 'nestjs-pino';
 
 /**
  * Thin façade over ioredis with a transparent in-memory fallback.
@@ -46,11 +45,9 @@ export class RedisService implements OnModuleInit, OnModuleDestroy {
   /** Whether the global `message` listener has been attached to subClient. */
   private subListenerAttached = false;
 
-  constructor(
-    @InjectPinoLogger(RedisService.name)
-    private readonly logger: PinoLogger,
-    private readonly config: ConfigService,
-  ) {}
+  private readonly logger = new Logger(RedisService.name);
+
+  constructor(private readonly config: ConfigService) {}
 
   async onModuleInit(): Promise<void> {
     const url = this.config.get<string>('REDIS_URL');
@@ -72,7 +69,7 @@ export class RedisService implements OnModuleInit, OnModuleDestroy {
         this.logger.error(`redis error: ${err.message}`);
       });
       client.on('connect', () => {
-        this.logger.info('redis connected');
+        this.logger.log('redis connected');
       });
       client.on('end', () => {
         this.logger.warn('redis connection closed');

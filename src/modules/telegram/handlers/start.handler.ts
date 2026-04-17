@@ -44,11 +44,10 @@ export class StartHandler {
       const code = payload.slice(3);
       const session = getSession(user.telegramId);
       try {
-        await this.checkin.scan({
-          userId: user.id,
-          code,
-          lat: session.lastLocation?.lat,
-          lng: session.lastLocation?.lng,
+        await this.checkin.scan(user.id, {
+          token: code,
+          latitude: session.lastLocation?.lat,
+          longitude: session.lastLocation?.lng,
         });
         await ctx.reply('Отметка принята. Хорошего дня.', mainMenu(role));
       } catch (err) {

@@ -41,11 +41,8 @@ export class ProjectHandler {
 
     const projects = await this.prisma.project.findMany({
       where: {
-        OR: [
-          { ownerId: user.id },
-          { members: { some: { userId: user.id } } },
-        ],
-        archivedAt: null,
+        userId: user.id,
+        status: { not: 'ARCHIVED' },
       },
       select: { id: true, name: true },
       take: 20,
@@ -76,10 +73,7 @@ export class ProjectHandler {
     }
 
     try {
-      const entry = await this.timeEntries.start({
-        userId: user.id,
-        projectId,
-      });
+      const entry = await this.timeEntries.start(user.id, projectId);
       await ctx.answerCbQuery('Таймер запущен.');
       await ctx.reply('Таймер запущен.', stopInline(entry.id));
     } catch (err) {
@@ -103,11 +97,9 @@ export class ProjectHandler {
     }
 
     try {
-      const entry = await this.timeEntries.stop({
-        userId: user.id,
-        entryId,
-      });
-      const minutes = entry.durationMinutes ?? 0;
+      const entry = await this.timeEntries.stop(user.id, entryId);
+      const seconds = entry.durationSec ?? 0;
+      const minutes = Math.floor(seconds / 60);
       await ctx.answerCbQuery('Остановлен.');
       await ctx.reply(
         `Таймер остановлен. Записано: ${Math.floor(minutes / 60)}ч ${minutes % 60}м.`,
@@ -135,7 +127,7 @@ export class ProjectHandler {
     }
 
     const active = await this.prisma.timeEntry.findFirst({
-      where: { userId: user.id, endedAt: null },
+      where: { project: { userId: user.id }, endedAt: null },
       include: { project: { select: { name: true } } },
       orderBy: { startedAt: 'desc' },
     });

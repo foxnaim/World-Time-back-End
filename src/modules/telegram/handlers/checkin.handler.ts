@@ -55,11 +55,10 @@ export class CheckinHandler {
       const code = session.pendingQr;
       session.pendingQr = undefined;
       try {
-        await this.checkin.scan({
-          userId: user.id,
-          code,
-          lat: location.latitude,
-          lng: location.longitude,
+        await this.checkin.scan(user.id, {
+          token: code,
+          latitude: location.latitude,
+          longitude: location.longitude,
         });
         await ctx.reply('Отметка принята.');
         return;

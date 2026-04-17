@@ -3,24 +3,19 @@ import {
   ExecutionContext,
   Injectable,
   NestInterceptor,
+  Logger,
 } from '@nestjs/common';
-import { PinoLogger, InjectPinoLogger } from 'nestjs-pino';
 import { Observable, tap } from 'rxjs';
 import { Request } from 'express';
 
 /**
- * Most HTTP request/response logging is already handled by `pino-http` inside
- * `LoggerModule`. This interceptor is retained as a thin shim that records
- * handler-level duration through the structured pino logger, so existing
- * `useGlobalInterceptors(new LoggingInterceptor())` wiring in `main.ts`
- * continues to work without emitting `console.log` output.
+ * Most HTTP request/response logging is handled by `pino-http` via LoggerModule.
+ * This interceptor adds per-handler timing using the global Nest Logger, which
+ * nestjs-pino re-routes through structured pino output.
  */
 @Injectable()
 export class LoggingInterceptor implements NestInterceptor {
-  constructor(
-    @InjectPinoLogger(LoggingInterceptor.name)
-    private readonly logger: PinoLogger,
-  ) {}
+  private readonly logger = new Logger(LoggingInterceptor.name);
 
   intercept(context: ExecutionContext, next: CallHandler): Observable<unknown> {
     const request = context.switchToHttp().getRequest<Request>();
@@ -32,14 +27,14 @@ export class LoggingInterceptor implements NestInterceptor {
       tap({
         next: () => {
           this.logger.debug(
-            { method, url, durationMs: Date.now() - start },
-            'handler completed',
+            `handler completed ${method} ${url} ${Date.now() - start}ms`,
           );
         },
         error: (err: unknown) => {
           this.logger.warn(
-            { method, url, durationMs: Date.now() - start, err },
-            'handler errored',
+            `handler errored ${method} ${url} ${Date.now() - start}ms: ${
+              (err as Error)?.message ?? err
+            }`,
           );
         },
       }),

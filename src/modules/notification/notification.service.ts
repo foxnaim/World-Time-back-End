@@ -1,6 +1,5 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { InjectPinoLogger, PinoLogger } from 'nestjs-pino';
 import type { Transporter, SendMailOptions } from 'nodemailer';
 
 import {
@@ -38,11 +37,9 @@ export class NotificationService {
   private transporterInitAttempted = false;
   private smtpConfig: SmtpConfig | null = null;
 
-  constructor(
-    @InjectPinoLogger(NotificationService.name)
-    private readonly logger: PinoLogger,
-    private readonly config: ConfigService,
-  ) {}
+  private readonly logger = new Logger(NotificationService.name);
+
+  constructor(private readonly config: ConfigService) {}
 
   async sendEmployeeInvite(dto: SendEmployeeInviteDto): Promise<void> {
     const rendered = renderEmployeeInvite({
@@ -82,7 +79,7 @@ export class NotificationService {
     const { to, rendered, kind } = params;
     const transporter = await this.getTransporter();
     if (!transporter || !this.smtpConfig) {
-      this.logger.info(
+      this.logger.log(
         { kind, to, subject: rendered.subject },
         'SMTP not configured; skipping email delivery',
       );
@@ -99,7 +96,7 @@ export class NotificationService {
 
     try {
       const info = await transporter.sendMail(message);
-      this.logger.info(
+      this.logger.log(
         { kind, to, subject: rendered.subject, messageId: info.messageId },
         'email sent',
       );
@@ -134,7 +131,7 @@ export class NotificationService {
     const from = this.config.get<string>('MAIL_FROM')?.trim();
 
     if (!host || !from) {
-      this.logger.info(
+      this.logger.log(
         { hasHost: Boolean(host), hasFrom: Boolean(from) },
         'SMTP_HOST or MAIL_FROM not set; notifications will be logged only',
       );
@@ -166,7 +163,7 @@ export class NotificationService {
         secure: port === 465,
         auth,
       });
-      this.logger.info(
+      this.logger.log(
         { host, port, authenticated: Boolean(auth) },
         'SMTP transporter initialized',
       );

@@ -4,12 +4,6 @@ import { v4 as uuidv4 } from 'uuid';
 
 export const REQUEST_ID_HEADER = 'X-Request-Id';
 
-declare module 'express-serve-static-core' {
-  interface Request {
-    id?: string;
-  }
-}
-
 @Injectable()
 export class CorrelationMiddleware implements NestMiddleware {
   use(req: Request, res: Response, next: NextFunction): void {
@@ -19,7 +13,7 @@ export class CorrelationMiddleware implements NestMiddleware {
 
     const id = incoming && incoming.trim().length > 0 ? incoming.trim() : uuidv4();
 
-    req.id = id;
+    (req as Request & { id?: string }).id = id;
     res.setHeader(REQUEST_ID_HEADER, id);
 
     next();

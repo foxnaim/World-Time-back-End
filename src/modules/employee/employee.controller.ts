@@ -83,8 +83,10 @@ export class EmployeeController {
       companyId: claim.companyId,
       role: claim.role as never,
       position: claim.position ?? null,
-      monthlySalary: claim.monthlySalary ?? null,
-      hourlyRate: claim.hourlyRate ?? null,
+      // Prisma `Decimal` doesn't satisfy the service's `string | number | null`
+      // signature directly; stringify so downstream Prisma calls still round-trip.
+      monthlySalary: claim.monthlySalary ? claim.monthlySalary.toString() : null,
+      hourlyRate: claim.hourlyRate ? claim.hourlyRate.toString() : null,
     });
 
     this.logger.log(

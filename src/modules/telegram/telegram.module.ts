@@ -1,6 +1,7 @@
 import { Module, OnModuleInit, Optional } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
-import { TelegrafModule } from 'nestjs-telegraf';
+import { InjectBot, TelegrafModule } from 'nestjs-telegraf';
+import { Telegraf } from 'telegraf';
 import { PrismaModule } from '@/common/prisma.module';
 import { RedisService } from '@/common/redis/redis.service';
 import { AuthModule } from '../auth/auth.module';
@@ -21,13 +22,12 @@ import { registerSessionRedis } from './session';
 @Module({
   imports: [
     TelegrafModule.forRootAsync({
-      imports: [ConfigModule, PrismaModule],
-      inject: [ConfigService, UserMiddleware],
-      useFactory: (config: ConfigService, userMiddleware: UserMiddleware) => ({
+      imports: [ConfigModule],
+      inject: [ConfigService],
+      useFactory: (config: ConfigService) => ({
         token: config.get<string>('TELEGRAM_BOT_TOKEN') ?? '',
-        middlewares: [userMiddleware.use()],
+        launchOptions: config.get<string>('TELEGRAM_BOT_TOKEN') ? undefined : false,
       }),
-      extraProviders: [UserMiddleware],
     }),
     PrismaModule,
     AuthModule,
@@ -49,9 +49,15 @@ import { registerSessionRedis } from './session';
   exports: [BotService],
 })
 export class TelegramModule implements OnModuleInit {
-  constructor(@Optional() private readonly redis?: RedisService) {}
+  constructor(
+    @InjectBot() private readonly bot: Telegraf,
+    private readonly userMiddleware: UserMiddleware,
+    @Optional() private readonly redis?: RedisService,
+  ) {}
 
   onModuleInit(): void {
     registerSessionRedis(this.redis ?? null);
+    // Attach user resolution middleware now that DI has instantiated it.
+    this.bot.use(this.userMiddleware.use());
   }
 }

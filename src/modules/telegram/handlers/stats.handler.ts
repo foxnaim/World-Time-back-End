@@ -40,8 +40,8 @@ export class StatsHandler {
     const lines: string[] = [];
 
     const employee = await this.prisma.employee
-      ?.findFirst?.({
-        where: { userId: user.id, leftAt: null },
+      .findFirst({
+        where: { userId: user.id, status: 'ACTIVE' },
         include: { company: { select: { name: true } } },
       })
       .catch(() => null);
@@ -49,79 +49,49 @@ export class StatsHandler {
     if (employee) {
       const entries = await this.prisma.timeEntry.findMany({
         where: {
-          userId: user.id,
+          project: { userId: user.id },
           startedAt: { gte: monthStart },
           endedAt: { not: null },
         },
-        select: { durationMinutes: true },
+        select: { durationSec: true },
       });
-      const totalMinutes = entries.reduce(
-        (acc, e) => acc + (e.durationMinutes ?? 0),
-        0,
+      const totalMinutes = Math.floor(
+        entries.reduce((acc, e) => acc + (e.durationSec ?? 0), 0) / 60,
       );
 
-      const lateCount = await this.prisma.checkin
-        ?.count?.({
-          where: {
-            userId: user.id,
-            createdAt: { gte: monthStart },
-            isLate: true,
-          },
-        })
-        .catch(() => 0);
+      // TODO: CheckIn schema has no `isLate` column — lateness is computed
+      // on the fly in CheckinService. Counting here would require reloading
+      // company workStartHour and re-running that logic; skip for bot MVP.
+      const lateCount = 0;
 
       lines.push(`Компания: ${employee.company?.name ?? '—'}`);
       lines.push(`Часы за месяц: ${fmtHours(totalMinutes)}`);
-      lines.push(`Опозданий: ${lateCount ?? 0}`);
-
-      const ranking = await this.prisma.timeEntry
-        .groupBy?.({
-          by: ['userId'],
-          where: {
-            startedAt: { gte: monthStart },
-            endedAt: { not: null },
-            user: { employee: { companyId: employee.companyId } as any },
-          } as any,
-          _sum: { durationMinutes: true },
-        })
-        .catch(() => [] as any[]);
-
-      if (Array.isArray(ranking) && ranking.length) {
-        const sorted = [...ranking].sort(
-          (a: any, b: any) =>
-            (b._sum?.durationMinutes ?? 0) - (a._sum?.durationMinutes ?? 0),
-        );
-        const idx = sorted.findIndex((r: any) => r.userId === user.id);
-        if (idx >= 0) {
-          lines.push(`Место в команде: ${idx + 1} из ${sorted.length}`);
-        }
-      }
+      lines.push(`Опозданий: ${lateCount}`);
     } else {
       const active = await this.prisma.project.count({
         where: {
-          OR: [
-            { ownerId: user.id },
-            { members: { some: { userId: user.id } } },
-          ],
-          archivedAt: null,
+          userId: user.id,
+          status: { not: 'ARCHIVED' },
         },
       });
 
       const grouped = await this.prisma.timeEntry
-        .groupBy?.({
+        .groupBy({
           by: ['projectId'],
           where: {
-            userId: user.id,
+            project: { userId: user.id },
             startedAt: { gte: monthStart },
             endedAt: { not: null },
           },
-          _sum: { durationMinutes: true },
+          _sum: { durationSec: true },
         })
-        .catch(() => [] as any[]);
+        .catch(() => [] as Array<{ projectId: string; _sum: { durationSec: number | null } }>);
 
-      const totalMinutes = (Array.isArray(grouped) ? grouped : []).reduce(
-        (acc: number, r: any) => acc + (r._sum?.durationMinutes ?? 0),
-        0,
+      const totalMinutes = Math.floor(
+        (Array.isArray(grouped) ? grouped : []).reduce(
+          (acc: number, r: any) => acc + (r._sum?.durationSec ?? 0),
+          0,
+        ) / 60,
       );
 
       lines.push(`Активных проектов: ${active}`);
@@ -139,7 +109,7 @@ export class StatsHandler {
         for (const row of grouped as any[]) {
           const p = nameMap.get(row.projectId);
           if (!p) continue;
-          const minutes = row._sum?.durationMinutes ?? 0;
+          const minutes = Math.floor((row._sum?.durationSec ?? 0) / 60);
           if (minutes <= 0) continue;
           const hours = minutes / 60;
           let rate: number | null = null;

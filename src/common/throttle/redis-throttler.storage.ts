@@ -1,8 +1,15 @@
 import { Logger } from '@nestjs/common';
-import type {
-  ThrottlerStorage,
-  ThrottlerStorageRecord,
-} from '@nestjs/throttler';
+import type { ThrottlerStorage } from '@nestjs/throttler';
+
+// ThrottlerStorageRecord is exported as a type-only member from a nested
+// path in @nestjs/throttler v6; the barrel `index.d.ts` doesn't re-export it.
+// Declaring it locally avoids reaching into `dist/`.
+interface ThrottlerStorageRecord {
+  totalHits: number;
+  timeToExpire: number;
+  isBlocked: boolean;
+  timeToBlockExpire: number;
+}
 
 import { RedisService } from '../redis/redis.service';
 
