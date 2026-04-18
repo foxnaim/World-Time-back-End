@@ -136,7 +136,7 @@ export class AuthService {
     return code;
   }
 
-  consumeBotOneTimeCode(code: string): bigint | null {
+  async consumeBotOneTimeCode(code: string): Promise<bigint | null> {
     this.pruneOtc();
     const entry = this.otcStore.get(code);
     const redis = this.redis;
@@ -148,20 +148,24 @@ export class AuthService {
       if (entry.expiresAt < Date.now()) return null;
       return entry.telegramId;
     }
-    // Not in local mirror (e.g. issued on a different instance). Best-effort
-    // lookup in Redis, kicked off in the background; surface a synchronous
-    // miss for now — the caller will reject as expected. The async path still
-    // deletes the key so a later retry on the owning instance doesn't reuse
-    // it.
+    // Not in local mirror (e.g. issued on a different instance, or the owning
+    // process restarted and the Map was wiped). Fall back to Redis and await
+    // the lookup so single-request correctness holds even without sticky
+    // sessions.
     if (redis) {
-      void redis
-        .get(AuthService.OTC_KEY_PREFIX + code)
-        .then(async (val) => {
-          if (val) {
-            await redis.del(AuthService.OTC_KEY_PREFIX + code).catch(() => 0);
+      try {
+        const val = await redis.get(AuthService.OTC_KEY_PREFIX + code);
+        if (val) {
+          await redis.del(AuthService.OTC_KEY_PREFIX + code).catch(() => 0);
+          try {
+            return BigInt(val);
+          } catch {
+            return null;
           }
-        })
-        .catch(() => undefined);
+        }
+      } catch {
+        // fall through
+      }
     }
     return null;
   }

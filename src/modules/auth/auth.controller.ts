@@ -64,7 +64,7 @@ export class AuthController {
   @ApiResponse({ status: 200, description: 'Token pair issued' })
   @ApiResponse({ status: 401, description: 'Invalid/expired OTC or user mismatch' })
   async botLogin(@Body() dto: BotLoginDto) {
-    const telegramId = this.authService.consumeBotOneTimeCode(dto.oneTimeCode);
+    const telegramId = await this.authService.consumeBotOneTimeCode(dto.oneTimeCode);
     if (!telegramId) {
       this.logger.warn('bot-login invalid OTC');
       throw new UnauthorizedException('Invalid or expired one-time code');
