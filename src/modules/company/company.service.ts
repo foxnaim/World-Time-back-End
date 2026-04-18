@@ -7,6 +7,13 @@ import {
 import { EmployeeRole, EmployeeStatus, Prisma } from '@prisma/client';
 import { createId } from '@paralleldrive/cuid2';
 import { PrismaService } from '@/common/prisma.service';
+import { BillingService } from '@/modules/billing/billing.service';
+import {
+  LATE_GRACE_MINUTES,
+  computeLateMinutes,
+  groupByDay,
+  localParts,
+} from '@/modules/analytics/analytics.helpers';
 import { InviteTokenService } from './invite-token.service';
 import type { CreateCompanyDto } from './dto/create-company.dto';
 import type { UpdateCompanyDto } from './dto/update-company.dto';
@@ -33,6 +40,7 @@ export class CompanyService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly inviteTokens: InviteTokenService,
+    private readonly billing: BillingService,
   ) {}
 
   /**
@@ -76,6 +84,13 @@ export class CompanyService {
 
           return created;
         });
+
+        // Provision a default FREE-tier subscription for the new company.
+        // Outside the transaction on purpose: a failure here should not roll
+        // back company + OWNER creation (the seat guard falls back to FREE
+        // defaults when no row exists), but we log + rethrow so callers see
+        // the problem in staging.
+        await this.billing.createDefaultFreeSubscription(company.id);
 
         return company;
       } catch (err) {
@@ -186,23 +201,105 @@ export class CompanyService {
 
   /**
    * List all employees of a company. OWNER/MANAGER only (enforced by guard).
+   *
+   * Returns a UI-friendly shape:
+   *   { items: [{ id, name, position, role, status, monthlySalary,
+   *               hourlyRate, checkedInToday, lateCountMonth, avatarUrl }] }
+   *
+   * `checkedInToday` is computed against the company's local timezone; a
+   * single IN check-in for today flips it true. `lateCountMonth` counts days
+   * this calendar month where the first IN exceeded `workStartHour + grace`.
+   * BigInt (`user.telegramId`) is dropped from the payload because Nest's
+   * default JSON serializer chokes on it.
    */
   async listEmployees(companyId: string) {
-    return this.prisma.employee.findMany({
+    const company = await this.prisma.company.findUnique({
+      where: { id: companyId },
+      select: { id: true, timezone: true, workStartHour: true },
+    });
+    if (!company) throw new NotFoundException('Company not found');
+
+    // Month-to-date window for late counting. Pulled in a single query per
+    // employee roster load — this endpoint is not in a hot path.
+    const now = new Date();
+    const monthStart = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1));
+
+    const employees = await this.prisma.employee.findMany({
       where: { companyId },
       include: {
         user: {
           select: {
             id: true,
-            telegramId: true,
             firstName: true,
             lastName: true,
             username: true,
+            avatarUrl: true,
           },
+        },
+        checkIns: {
+          where: { timestamp: { gte: monthStart } },
+          select: { type: true, timestamp: true },
         },
       },
       orderBy: [{ role: 'asc' }, { createdAt: 'asc' }],
     });
+
+    // Today's local YYYY-MM-DD key in the company timezone. We compare
+    // check-in day keys against this to derive `checkedInToday`.
+    const todayKey = new Intl.DateTimeFormat('en-CA', {
+      timeZone: company.timezone,
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+    }).format(now);
+
+    const items = employees.map((emp) => {
+      const firstName = emp.user.firstName ?? '';
+      const lastName = emp.user.lastName ?? '';
+      const name = `${firstName}${lastName ? ` ${lastName}` : ''}`.trim() || 'Без имени';
+
+      const byDay = groupByDay(emp.checkIns, company.timezone);
+      let lateCountMonth = 0;
+      let checkedInToday = false;
+
+      for (const [dayKey, dayCheckIns] of byDay) {
+        const sorted = [...dayCheckIns].sort(
+          (a, b) => a.timestamp.getTime() - b.timestamp.getTime(),
+        );
+        const firstIn = sorted.find((c) => c.type === 'IN');
+        if (!firstIn) continue;
+        if (dayKey === todayKey) checkedInToday = true;
+        const { hour, minute } = localParts(firstIn.timestamp, company.timezone);
+        const lateMin = computeLateMinutes(
+          hour,
+          minute,
+          company.workStartHour,
+          LATE_GRACE_MINUTES,
+        );
+        if (lateMin > 0) lateCountMonth += 1;
+      }
+
+      // Prisma Decimal → number | null so JSON.stringify is happy and the
+      // frontend can format with Intl.NumberFormat without a .toString() dance.
+      const monthlySalary =
+        emp.monthlySalary == null ? null : Number(emp.monthlySalary.toString());
+      const hourlyRate = emp.hourlyRate == null ? null : Number(emp.hourlyRate.toString());
+
+      return {
+        id: emp.id,
+        name,
+        position: emp.position,
+        role: emp.role,
+        status: emp.status,
+        monthlySalary,
+        hourlyRate,
+        checkedInToday,
+        lateCountMonth,
+        avatarUrl: emp.user.avatarUrl,
+      };
+    });
+
+    return { items };
   }
 
   /**
