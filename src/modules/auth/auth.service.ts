@@ -203,6 +203,34 @@ export class AuthService {
     return this.prisma.user.findUnique({ where: { id } });
   }
 
+  /**
+   * Fetch the user along with the relations the frontend account menu and
+   * profile page need: active employee memberships (with their company) and
+   * subscriptions for every company the user owns. Kept separate from
+   * `getUserById` so callers that only want the bare user row (e.g. token
+   * issue) don't pay for the extra joins.
+   */
+  async getUserWithRelations(id: string) {
+    return this.prisma.user.findUnique({
+      where: { id },
+      include: {
+        employees: {
+          where: { status: 'ACTIVE' },
+          include: {
+            company: {
+              select: { id: true, name: true, slug: true },
+            },
+          },
+        },
+        ownedCompanies: {
+          include: {
+            subscription: true,
+          },
+        },
+      },
+    });
+  }
+
   async getUserByTelegramId(telegramId: bigint) {
     return this.prisma.user.findUnique({ where: { telegramId } });
   }

@@ -126,11 +126,37 @@ export class AuthController {
   @ApiResponse({ status: 401, description: 'Missing or invalid JWT' })
   async me(@Req() req: Request) {
     const jwtUser = req.user as JwtUser;
-    const user = await this.authService.getUserById(jwtUser.id);
+    const user = await this.authService.getUserWithRelations(jwtUser.id);
     if (!user) {
       throw new UnauthorizedException('User not found');
     }
+    // Employees come pre-filtered to ACTIVE by the service. Shape is trimmed
+    // to just what the account menu renders; we intentionally drop salary/
+    // position here so /auth/me stays cheap and non-sensitive.
+    const employees = user.employees.map((e) => ({
+      role: e.role,
+      company: {
+        id: e.company.id,
+        name: e.company.name,
+        slug: e.company.slug,
+      },
+    }));
+    // Only surface subscriptions that actually exist for an owned company.
+    // `ownedCompanies` is the join surface; `subscription` is 1:1 optional.
+    const subscriptions = user.ownedCompanies
+      .filter((c) => c.subscription !== null)
+      .map((c) => {
+        const s = c.subscription!;
+        return {
+          companyId: c.id,
+          tier: s.tier,
+          status: s.status,
+          seatsLimit: s.seatsLimit,
+          currentPeriodEnd: s.currentPeriodEnd,
+        };
+      });
     return {
+      // Backward-compatible fields preserved in original positions.
       id: user.id,
       telegramId: user.telegramId.toString(),
       firstName: user.firstName,
@@ -138,6 +164,10 @@ export class AuthController {
       username: user.username ?? null,
       phone: user.phone ?? null,
       avatarUrl: user.avatarUrl ?? null,
+      // New fields for profile page + account menu.
+      createdAt: user.createdAt,
+      employees,
+      subscriptions,
     };
   }
 }
