@@ -57,10 +57,9 @@ export class HealthController {
       (): Promise<Record<string, unknown>> =>
         this.prismaIndicator.pingCheck('database', { timeout: 1_500 }),
     ];
-    if (this.redisIndicator.isConfigured) {
+    if (this.redisIndicator.isConfigured()) {
       checks.push(
-        (): Promise<Record<string, unknown>> =>
-          this.redisIndicator.pingCheck('redis', { timeout: 1_000 }),
+        (): Promise<Record<string, unknown>> => this.redisIndicator.pingCheck('redis'),
       );
     }
     return this.health.check(checks as never);

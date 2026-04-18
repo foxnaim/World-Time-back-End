@@ -1,69 +1,64 @@
-import { Injectable, Logger, OnModuleDestroy } from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
+import { Injectable, Logger } from '@nestjs/common';
 import { HealthCheckError, HealthIndicator, HealthIndicatorResult } from '@nestjs/terminus';
-import Redis from 'ioredis';
 
+import { RedisService } from '../../../common/redis/redis.service';
+
+/**
+ * Readiness indicator for Redis.
+ *
+ * Delegates the actual probe to {@link RedisService.healthPing}, which owns
+ * the single ioredis connection for the process, already wraps the PING in
+ * a timeout, and returns `null` on failure instead of throwing. This avoids
+ * the old failure mode where the indicator created its OWN lazy ioredis
+ * client with `enableOfflineQueue: false`; if that side-client's socket
+ * wasn't writable at probe time ioredis rejected with
+ *   "Stream isn't writeable and enableOfflineQueue options is false"
+ * even though the app's real Redis connection was fine — producing spurious
+ * 503s from /healthz/ready.
+ *
+ * When the service is in `fallback` mode (no REDIS_URL configured, or the
+ * initial connect failed and we're running on the in-memory Map), we report
+ * the probe as healthy with a `mode: 'fallback'` note. The app is
+ * intentionally designed to serve traffic in that mode; failing readiness
+ * would take the pod out of rotation for a condition that isn't actually
+ * degraded from the caller's point of view.
+ */
 @Injectable()
-export class RedisHealthIndicator extends HealthIndicator implements OnModuleDestroy {
+export class RedisHealthIndicator extends HealthIndicator {
   private readonly logger = new Logger(RedisHealthIndicator.name);
-  private client: Redis | null = null;
 
-  constructor(private readonly config: ConfigService) {
+  constructor(private readonly redis: RedisService) {
     super();
-    const url = this.config.get<string>('REDIS_URL');
-    if (url) {
-      this.client = new Redis(url, {
-        lazyConnect: true,
-        maxRetriesPerRequest: 1,
-        enableOfflineQueue: false,
-        connectTimeout: 2_000,
-      });
-      this.client.on('error', (err) => {
-        this.logger.warn(`Redis error: ${err.message}`);
-      });
-    }
   }
 
-  get isConfigured(): boolean {
-    return this.client !== null;
-  }
-
-  async pingCheck(key: string, options: { timeout?: number } = {}): Promise<HealthIndicatorResult> {
-    if (!this.client) {
-      return this.getStatus(key, true, {
-        status: 'skipped',
-        note: 'redis not configured',
-      });
+  async pingCheck(key: string): Promise<HealthIndicatorResult> {
+    if (this.redis.status === 'fallback') {
+      return this.getStatus(key, true, { mode: 'fallback' });
     }
-
-    const timeout = options.timeout ?? 2_000;
-    const start = Date.now();
     try {
-      const result = await Promise.race([
-        this.client.ping(),
-        new Promise<never>((_, reject) =>
-          setTimeout(() => reject(new Error(`Redis ping timed out after ${timeout}ms`)), timeout),
-        ),
-      ]);
-      if (result !== 'PONG') {
-        throw new Error(`Unexpected Redis ping response: ${result}`);
+      const latency = await this.redis.healthPing();
+      if (latency === null) {
+        throw new Error('ping returned null');
       }
-      return this.getStatus(key, true, {
-        responseTimeMs: Date.now() - start,
-      });
+      return this.getStatus(key, true, { latencyMs: latency });
     } catch (err) {
       const message = err instanceof Error ? err.message : String(err);
-      throw new HealthCheckError(`${key} check failed`, this.getStatus(key, false, { message }));
+      throw new HealthCheckError(
+        'redis health check failed',
+        this.getStatus(key, false, { message }),
+      );
     }
   }
 
-  async onModuleDestroy(): Promise<void> {
-    if (this.client) {
-      try {
-        await this.client.quit();
-      } catch {
-        this.client.disconnect();
-      }
-    }
+  /**
+   * True when the probe should run against a real Redis connection. We
+   * consider Redis "configured" when either the service has a live client
+   * (status !== 'fallback') OR the operator explicitly set REDIS_URL — in
+   * the latter case a fallback status means Redis SHOULD be there but we
+   * couldn't reach it at boot, and the probe should still run so the
+   * transition back to healthy is observable.
+   */
+  isConfigured(): boolean {
+    return this.redis.status !== 'fallback' || Boolean(process.env.REDIS_URL);
   }
 }
