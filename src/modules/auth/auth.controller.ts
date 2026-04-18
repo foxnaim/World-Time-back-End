@@ -7,6 +7,7 @@ import {
   Logger,
   Post,
   Req,
+  Res,
   UnauthorizedException,
   UseGuards,
 } from '@nestjs/common';
@@ -14,7 +15,7 @@ import { AuthGuard } from '@nestjs/passport';
 import { SetMetadata } from '@nestjs/common';
 import { Throttle } from '@nestjs/throttler';
 import { ApiBearerAuth, ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
-import type { Request } from 'express';
+import type { Request, Response } from 'express';
 
 import { AuthService } from './auth.service';
 import { TelegramVerifyDto } from './dto/telegram-verify.dto';
@@ -89,6 +90,32 @@ export class AuthController {
   @ApiResponse({ status: 401, description: 'Refresh token invalid or revoked' })
   async refresh(@Body() dto: RefreshDto) {
     return this.authService.refresh(dto.refreshToken);
+  }
+
+  /**
+   * Clears the `wt_access` and `wt_refresh` cookies by emitting
+   * `Set-Cookie: <name>=; Max-Age=0; Path=/`. Public because we want to
+   * be tolerant of already-expired sessions — logging out should always
+   * succeed from the user's perspective. Returns 204 No Content.
+   *
+   * Note: the backend does not currently issue auth cookies itself (the
+   * frontend writes them client-side from the JSON token pair), but we
+   * clear them here anyway so a future server-side cookie flow can share
+   * this endpoint unchanged.
+   */
+  @Public()
+  @Post('logout')
+  @HttpCode(HttpStatus.NO_CONTENT)
+  @ApiOperation({
+    summary: 'Clear auth cookies',
+    description: 'Expires wt_access and wt_refresh cookies. Always returns 204.',
+  })
+  @ApiResponse({ status: 204, description: 'Cookies cleared' })
+  logout(@Res({ passthrough: true }) res: Response): void {
+    const secure = process.env.NODE_ENV === 'production';
+    const flags = `Path=/; Max-Age=0; HttpOnly; SameSite=Lax${secure ? '; Secure' : ''}`;
+    res.append('Set-Cookie', `wt_access=; ${flags}`);
+    res.append('Set-Cookie', `wt_refresh=; ${flags}`);
   }
 
   @UseGuards(AuthGuard('jwt'))
