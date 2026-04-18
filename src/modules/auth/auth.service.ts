@@ -213,8 +213,18 @@ export class AuthService {
     if (!accessSecret || !refreshSecret) {
       throw new InternalServerErrorException('JWT secrets not configured');
     }
+    // Frontend middleware (jose HS256 verify) requires telegramId to live
+    // inside the access token so it can be pulled without a DB round-trip.
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+      select: { id: true, telegramId: true },
+    });
     const accessToken = await this.jwt.signAsync(
-      { sub: userId },
+      {
+        sub: userId,
+        id: userId,
+        telegramId: user?.telegramId?.toString() ?? '',
+      },
       { secret: accessSecret, expiresIn: '15m' },
     );
     const refreshToken = await this.jwt.signAsync(
