@@ -1,10 +1,4 @@
-import {
-  Inject,
-  Injectable,
-  Logger,
-  Optional,
-  forwardRef,
-} from '@nestjs/common';
+import { Inject, Injectable, Logger, Optional, forwardRef } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 
 import { NotificationService } from '@/modules/notification/notification.service';
@@ -50,9 +44,7 @@ export class QueueService {
     private readonly reports?: ReportService,
   ) {
     void this.config;
-    this.logger.log(
-      'QueueService running in sync-fallback-only mode (BullMQ stubbed)',
-    );
+    this.logger.log('QueueService running in sync-fallback-only mode (BullMQ stubbed)');
   }
 
   /** Always false in the stub; callers that branch on this still work. */
@@ -98,10 +90,7 @@ export class QueueService {
 
   // ---------- pdf report ----------
 
-  async enqueuePdfReport(
-    data: PdfReportJob,
-    _opts?: EnqueueOptions,
-  ): Promise<{ jobId: string }> {
+  async enqueuePdfReport(data: PdfReportJob, _opts?: EnqueueOptions): Promise<{ jobId: string }> {
     await this.runPdfSync(data);
     return { jobId: 'sync' };
   }
@@ -123,9 +112,7 @@ export class QueueService {
         await this.notifications.sendEmployeeInvite(data as EmployeeInviteJob);
         return;
       case 'monthly-report':
-        await this.notifications.sendMonthlyReportReady(
-          data as MonthlyReportJob,
-        );
+        await this.notifications.sendMonthlyReportReady(data as MonthlyReportJob);
         return;
       case 'auth-link':
         await this.notifications.sendAuthLink(data as AuthLinkJob);
@@ -135,9 +122,7 @@ export class QueueService {
 
   private async runSheetsExportSync(data: SheetsExportJob): Promise<void> {
     if (!this.sheets) {
-      this.logger.warn(
-        'sync sheets-export fallback requested but SheetsService not available',
-      );
+      this.logger.warn('sync sheets-export fallback requested but SheetsService not available');
       return;
     }
     await this.sheets.exportCompanyMonth(data.companyId, data.month);
@@ -145,9 +130,7 @@ export class QueueService {
 
   private async runPdfSync(data: PdfReportJob): Promise<void> {
     if (!this.reports) {
-      this.logger.warn(
-        'sync pdf fallback requested but ReportService not available',
-      );
+      this.logger.warn('sync pdf fallback requested but ReportService not available');
       return;
     }
     if (data.kind === 'attendance') {

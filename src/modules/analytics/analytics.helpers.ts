@@ -115,9 +115,7 @@ export function groupBy<T, K extends string | number>(
   return out;
 }
 
-export function groupByEmployee<T extends { employeeId: string }>(
-  items: T[],
-): Map<string, T[]> {
+export function groupByEmployee<T extends { employeeId: string }>(items: T[]): Map<string, T[]> {
   return groupBy(items, (i) => i.employeeId);
 }
 

@@ -33,12 +33,7 @@ export const SPACING = {
  * Draw a thin horizontal divider at (x, y) of width w using the shared rule
  * colour. Kept separate so stroke state can't leak into surrounding text.
  */
-export function drawHairline(
-  doc: PDFKit.PDFDocument,
-  x: number,
-  y: number,
-  w: number,
-): void {
+export function drawHairline(doc: PDFKit.PDFDocument, x: number, y: number, w: number): void {
   doc.save();
   doc
     .lineWidth(SPACING.hairline)

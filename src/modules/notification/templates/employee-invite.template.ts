@@ -15,9 +15,7 @@ export function renderEmployeeInvite(input: EmployeeInviteInput): RenderedEmail 
   const { companyName, inviteLink, telegramBotUsername } = input;
   const safeCompany = escapeHtml(companyName);
   const safeLink = escapeHtml(inviteLink);
-  const botHandle = telegramBotUsername
-    ? `@${telegramBotUsername.replace(/^@/, '')}`
-    : undefined;
+  const botHandle = telegramBotUsername ? `@${telegramBotUsername.replace(/^@/, '')}` : undefined;
 
   const subject = `Work Tact — You're invited to join ${companyName}`;
   const preheader = `Tap the link below to join ${companyName} and start logging your hours.`;

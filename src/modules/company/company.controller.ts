@@ -1,19 +1,5 @@
-import {
-  Body,
-  Controller,
-  Delete,
-  Get,
-  Param,
-  Patch,
-  Post,
-  UseGuards,
-} from '@nestjs/common';
-import {
-  ApiBearerAuth,
-  ApiOperation,
-  ApiResponse,
-  ApiTags,
-} from '@nestjs/swagger';
+import { Body, Controller, Delete, Get, Param, Patch, Post, UseGuards } from '@nestjs/common';
+import { ApiBearerAuth, ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { EmployeeRole } from '@prisma/client';
 import { Throttle } from '@nestjs/throttler';
 import { CurrentUser } from '@/common/decorators/current-user.decorator';
@@ -22,10 +8,7 @@ import { CompanyService } from './company.service';
 import { CreateCompanyDto } from './dto/create-company.dto';
 import { UpdateCompanyDto } from './dto/update-company.dto';
 import { InviteEmployeeDto } from './dto/invite-employee.dto';
-import {
-  CompanyRoleGuard,
-  RequireRole,
-} from './guards/company-role.guard';
+import { CompanyRoleGuard, RequireRole } from './guards/company-role.guard';
 
 interface AuthedUser {
   id: string;
@@ -69,10 +52,7 @@ export class CompanyController {
   @ApiResponse({ status: 200, description: 'Company returned' })
   @ApiResponse({ status: 403, description: 'Caller is not an employee' })
   @ApiResponse({ status: 404, description: 'Company not found' })
-  findBySlug(
-    @CurrentUser() user: AuthedUser,
-    @Param('slug') slug: string,
-  ) {
+  findBySlug(@CurrentUser() user: AuthedUser, @Param('slug') slug: string) {
     return this.companyService.findBySlug(user.id, slug);
   }
 
@@ -82,11 +62,7 @@ export class CompanyController {
   @ApiOperation({ summary: 'Update company settings (OWNER/MANAGER)' })
   @ApiResponse({ status: 200, description: 'Company updated' })
   @ApiResponse({ status: 403, description: 'Insufficient role' })
-  update(
-    @CurrentUser() user: AuthedUser,
-    @Param('id') id: string,
-    @Body() dto: UpdateCompanyDto,
-  ) {
+  update(@CurrentUser() user: AuthedUser, @Param('id') id: string, @Body() dto: UpdateCompanyDto) {
     return this.companyService.update(user.id, id, dto);
   }
 
@@ -97,11 +73,7 @@ export class CompanyController {
   @ApiOperation({ summary: 'Generate a Telegram invite deep-link (OWNER/MANAGER)' })
   @ApiResponse({ status: 201, description: 'Invite link returned' })
   @ApiResponse({ status: 403, description: 'Insufficient role' })
-  invite(
-    @CurrentUser() user: AuthedUser,
-    @Param('id') id: string,
-    @Body() dto: InviteEmployeeDto,
-  ) {
+  invite(@CurrentUser() user: AuthedUser, @Param('id') id: string, @Body() dto: InviteEmployeeDto) {
     return this.companyService.inviteEmployee(user.id, id, dto);
   }
 

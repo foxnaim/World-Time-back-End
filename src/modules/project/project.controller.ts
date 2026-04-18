@@ -9,13 +9,7 @@ import {
   Post,
   Query,
 } from '@nestjs/common';
-import {
-  ApiBearerAuth,
-  ApiOperation,
-  ApiQuery,
-  ApiResponse,
-  ApiTags,
-} from '@nestjs/swagger';
+import { ApiBearerAuth, ApiOperation, ApiQuery, ApiResponse, ApiTags } from '@nestjs/swagger';
 
 import { CurrentUser } from '@/common/decorators/current-user.decorator';
 
@@ -40,10 +34,7 @@ export class ProjectController {
   @ApiOperation({ summary: 'Create a freelancer project' })
   @ApiResponse({ status: 201, description: 'Project created' })
   @ApiResponse({ status: 400, description: 'Validation error' })
-  create(
-    @CurrentUser() user: JwtUser,
-    @Body() dto: CreateProjectDto,
-  ) {
+  create(@CurrentUser() user: JwtUser, @Body() dto: CreateProjectDto) {
     return this.projectService.create(user.id, dto);
   }
 
@@ -58,10 +49,7 @@ export class ProjectController {
   @ApiOperation({ summary: 'Get a single project by id' })
   @ApiResponse({ status: 200, description: 'Project returned' })
   @ApiResponse({ status: 404, description: 'Project not found or not owned' })
-  findOne(
-    @CurrentUser() user: JwtUser,
-    @Param('id') id: string,
-  ) {
+  findOne(@CurrentUser() user: JwtUser, @Param('id') id: string) {
     return this.projectService.findOne(user.id, id);
   }
 
@@ -69,11 +57,7 @@ export class ProjectController {
   @ApiOperation({ summary: 'Update a project' })
   @ApiResponse({ status: 200, description: 'Project updated' })
   @ApiResponse({ status: 404, description: 'Project not found or not owned' })
-  update(
-    @CurrentUser() user: JwtUser,
-    @Param('id') id: string,
-    @Body() dto: UpdateProjectDto,
-  ) {
+  update(@CurrentUser() user: JwtUser, @Param('id') id: string, @Body() dto: UpdateProjectDto) {
     return this.projectService.update(user.id, id, dto);
   }
 
@@ -85,11 +69,7 @@ export class ProjectController {
   @ApiQuery({ name: 'force', required: false, type: String })
   @ApiResponse({ status: 200, description: 'Project deleted or archived' })
   @ApiResponse({ status: 404, description: 'Project not found or not owned' })
-  delete(
-    @CurrentUser() user: JwtUser,
-    @Param('id') id: string,
-    @Query('force') force?: string,
-  ) {
+  delete(@CurrentUser() user: JwtUser, @Param('id') id: string, @Query('force') force?: string) {
     return this.projectService.delete(user.id, id, force === 'true');
   }
 

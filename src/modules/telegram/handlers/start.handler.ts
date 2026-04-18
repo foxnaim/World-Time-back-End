@@ -41,9 +41,7 @@ export class StartHandler {
       this.logger.warn(
         `/start without resolved user; telegramId=${ctx.from?.id}. Check UserMiddleware + Prisma.`,
       );
-      await ctx.reply(
-        'Не удалось инициализировать аккаунт. Попробуй /start ещё раз.',
-      );
+      await ctx.reply('Не удалось инициализировать аккаунт. Попробуй /start ещё раз.');
       return;
     }
 
@@ -60,9 +58,7 @@ export class StartHandler {
       } catch (err) {
         const msg = (err as Error).message || 'Не удалось отметиться.';
         session.pendingQr = code;
-        await ctx.reply(
-          `Не удалось отметиться: ${msg}\nПришли геолокацию и попробуй ещё раз.`,
-        );
+        await ctx.reply(`Не удалось отметиться: ${msg}\nПришли геолокацию и попробуй ещё раз.`);
       }
       return;
     }
@@ -91,10 +87,7 @@ export class StartHandler {
           },
           update: {},
         });
-        await ctx.reply(
-          'Приглашение принято. Ты в команде.',
-          mainMenu('b2b'),
-        );
+        await ctx.reply('Приглашение принято. Ты в команде.', mainMenu('b2b'));
       } catch (err) {
         const msg = (err as Error).message || 'Приглашение недействительно.';
         await ctx.reply(`Не удалось принять приглашение: ${msg}`);
@@ -111,10 +104,7 @@ export class StartHandler {
       );
       this.logger.log(`/start: welcome sent to telegramId=${ctx.from?.id}`);
     } catch (err) {
-      this.logger.error(
-        `/start reply failed: ${(err as Error).message}`,
-        (err as Error).stack,
-      );
+      this.logger.error(`/start reply failed: ${(err as Error).message}`, (err as Error).stack);
       throw err;
     }
   }

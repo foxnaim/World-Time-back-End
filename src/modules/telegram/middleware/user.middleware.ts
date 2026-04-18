@@ -32,9 +32,7 @@ export class UserMiddleware {
 
         (ctx.state as any).user = user;
       } catch (err) {
-        this.logger.error(
-          `Failed to resolve user: ${(err as Error).message}`,
-        );
+        this.logger.error(`Failed to resolve user: ${(err as Error).message}`);
       }
 
       return next();

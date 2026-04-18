@@ -30,9 +30,7 @@ export function mainMenu(role: UserRole): Keyboard {
 }
 
 export function shareLocation(): Keyboard {
-  return Markup.keyboard([
-    [Markup.button.locationRequest('Отправить геолокацию')],
-  ])
+  return Markup.keyboard([[Markup.button.locationRequest('Отправить геолокацию')]])
     .oneTime()
     .resize();
 }
@@ -50,9 +48,7 @@ export function projectsInline(projects: ProjectLite[]): InlineKeyboard {
 }
 
 export function stopInline(entryId: string): InlineKeyboard {
-  return Markup.inlineKeyboard([
-    [Markup.button.callback('Остановить', `stop_${entryId}`)],
-  ]);
+  return Markup.inlineKeyboard([[Markup.button.callback('Остановить', `stop_${entryId}`)]]);
 }
 
 export function confirmInline(action: string, id: string): InlineKeyboard {

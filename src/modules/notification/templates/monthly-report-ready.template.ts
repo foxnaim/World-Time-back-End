@@ -35,9 +35,7 @@ function formatMonth(month: string): string {
  * Emails the company owner that a monthly sheet export finished. Keeps the
  * email content light — the real detail lives in the Google Sheet.
  */
-export function renderMonthlyReportReady(
-  input: MonthlyReportReadyInput,
-): RenderedEmail {
+export function renderMonthlyReportReady(input: MonthlyReportReadyInput): RenderedEmail {
   const { companyName, month, spreadsheetUrl } = input;
   const safeCompany = escapeHtml(companyName);
   const safeUrl = escapeHtml(spreadsheetUrl);

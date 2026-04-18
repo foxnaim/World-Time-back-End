@@ -14,12 +14,7 @@ import type { GoogleAuth } from 'google-auth-library';
 import { PrismaService } from '@/common/prisma.service';
 
 import * as sheetStore from './storage/company-sheet-store';
-import type {
-  AttendanceRow,
-  ExportResult,
-  StoredCompanySheet,
-  SummaryRow,
-} from './sheets.types';
+import type { AttendanceRow, ExportResult, StoredCompanySheet, SummaryRow } from './sheets.types';
 
 const SCOPES = [
   'https://www.googleapis.com/auth/spreadsheets',
@@ -97,9 +92,7 @@ export class SheetsService {
         scopes: SCOPES,
       });
     } catch (err) {
-      this.logger.error(
-        `Failed to build GoogleAuth: ${(err as Error).message}`,
-      );
+      this.logger.error(`Failed to build GoogleAuth: ${(err as Error).message}`);
       throw new NotImplementedException(
         'Sheets export not configured. Set GOOGLE_SERVICE_ACCOUNT_JSON to enable.',
       );
@@ -173,9 +166,7 @@ export class SheetsService {
       createdAt: new Date().toISOString(),
     };
     await sheetStore.write(companyId, entry);
-    this.logger.log(
-      `Created spreadsheet ${spreadsheetId} for company ${companyId}`,
-    );
+    this.logger.log(`Created spreadsheet ${spreadsheetId} for company ${companyId}`);
     return entry;
   }
 
@@ -187,10 +178,7 @@ export class SheetsService {
    * @param companyId Prisma Company.id
    * @param month "YYYY-MM"
    */
-  async exportCompanyMonth(
-    companyId: string,
-    month: string,
-  ): Promise<ExportResult> {
+  async exportCompanyMonth(companyId: string, month: string): Promise<ExportResult> {
     const company = await this.prisma.company.findUnique({
       where: { id: companyId },
       include: { owner: true },
@@ -245,10 +233,7 @@ export class SheetsService {
     const summary: SummaryRow[] = employees.map((emp) => {
       const rows = checkIns.filter((c) => c.employeeId === emp.id);
       const pairs = pairInOut(rows);
-      const workedMs = pairs.reduce(
-        (acc, p) => acc + (p.out.getTime() - p.in.getTime()),
-        0,
-      );
+      const workedMs = pairs.reduce((acc, p) => acc + (p.out.getTime() - p.in.getTime()), 0);
       const workedHours = round2(workedMs / 3_600_000);
       let lateCount = 0;
       let totalLateMinutes = 0;
@@ -264,14 +249,11 @@ export class SheetsService {
           totalLateMinutes += lateMinutes;
         }
       }
-      const scheduledHoursPerDay =
-        Math.max(0, company.workEndHour - company.workStartHour) || 8;
+      const scheduledHoursPerDay = Math.max(0, company.workEndHour - company.workStartHour) || 8;
       const workedDays = pairs.length;
       const scheduledHours = workedDays * scheduledHoursPerDay;
       const overtimeHours = Math.max(0, round2(workedHours - scheduledHours));
-      const monthlySalary = emp.monthlySalary
-        ? Number(emp.monthlySalary)
-        : 0;
+      const monthlySalary = emp.monthlySalary ? Number(emp.monthlySalary) : 0;
       const user = emp.user;
       const employeeName = user
         ? `${user.firstName}${user.lastName ? ' ' + user.lastName : ''}`.trim()
@@ -428,10 +410,7 @@ export class SheetsService {
 
 // ---------- helpers ----------
 
-function findSheetId(
-  sheets: sheets_v4.Schema$Sheet[],
-  title: string,
-): number | undefined {
+function findSheetId(sheets: sheets_v4.Schema$Sheet[], title: string): number | undefined {
   const match = sheets.find((s) => s.properties?.title === title);
   return match?.properties?.sheetId ?? undefined;
 }
@@ -440,10 +419,7 @@ function findSheetId(
  * Compute the UTC [start, end) bounds of a YYYY-MM month in the given IANA
  * timezone. Fallback to UTC if the zone is malformed.
  */
-function monthRange(
-  month: string,
-  timezone: string,
-): { start: Date | null; end: Date | null } {
+function monthRange(month: string, timezone: string): { start: Date | null; end: Date | null } {
   const m = /^(\d{4})-(\d{2})$/.exec(month);
   if (!m) return { start: null, end: null };
   const year = Number(m[1]);
@@ -456,10 +432,7 @@ function monthRange(
   return { start, end };
 }
 
-function splitDateTime(
-  ts: Date,
-  timezone: string,
-): { date: string; time: string } {
+function splitDateTime(ts: Date, timezone: string): { date: string; time: string } {
   try {
     const fmtDate = new Intl.DateTimeFormat('en-CA', {
       timeZone: timezone,
@@ -515,9 +488,7 @@ function computeLateness(
  * Pair consecutive IN/OUT records for a single employee so we can compute
  * worked duration. Any leftover IN without an OUT is discarded.
  */
-function pairInOut(
-  checkIns: { type: string; timestamp: Date }[],
-): { in: Date; out: Date }[] {
+function pairInOut(checkIns: { type: string; timestamp: Date }[]): { in: Date; out: Date }[] {
   const pairs: { in: Date; out: Date }[] = [];
   let pendingIn: Date | null = null;
   for (const c of checkIns) {

@@ -60,9 +60,7 @@ function buildInitData(
     .join('\n');
 
   const secretKey = createHmac('sha256', 'WebAppData').update(botToken).digest();
-  const hash =
-    tamperHash ??
-    createHmac('sha256', secretKey).update(dataCheckString).digest('hex');
+  const hash = tamperHash ?? createHmac('sha256', secretKey).update(dataCheckString).digest('hex');
 
   params.set('hash', hash);
   return params.toString();
@@ -115,15 +113,13 @@ describe('AuthService', () => {
 
     it('throws InternalServerErrorException when bot token is not configured', async () => {
       const brokenConfig = {
-        get: jest.fn((key: string) =>
-          key === 'TELEGRAM_BOT_TOKEN' ? undefined : 'x',
-        ),
+        get: jest.fn((key: string) => (key === 'TELEGRAM_BOT_TOKEN' ? undefined : 'x')),
       } as unknown as ConfigService;
       const brokenService = new AuthService(prisma as any, jwt, brokenConfig);
 
-      await expect(
-        brokenService.verifyTelegramInitData('anything'),
-      ).rejects.toBeInstanceOf(InternalServerErrorException);
+      await expect(brokenService.verifyTelegramInitData('anything')).rejects.toBeInstanceOf(
+        InternalServerErrorException,
+      );
     });
 
     it('rejects empty initData', async () => {

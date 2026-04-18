@@ -60,10 +60,7 @@ import { registerSessionRedis } from './session';
             }
             (ctx.state as { user?: unknown }).user = user;
           } catch (err) {
-            logger.error(
-              `resolve user failed: ${(err as Error).message}`,
-              (err as Error).stack,
-            );
+            logger.error(`resolve user failed: ${(err as Error).message}`, (err as Error).stack);
           }
           return next();
         };

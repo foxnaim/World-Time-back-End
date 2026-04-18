@@ -63,9 +63,7 @@ export class CheckinHandler {
         await ctx.reply('Отметка принята.');
         return;
       } catch (err) {
-        await ctx.reply(
-          `Не удалось отметиться: ${(err as Error).message || 'ошибка.'}`,
-        );
+        await ctx.reply(`Не удалось отметиться: ${(err as Error).message || 'ошибка.'}`);
         return;
       }
     }

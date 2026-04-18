@@ -1,7 +1,4 @@
-import {
-  makeCounterProvider,
-  makeHistogramProvider,
-} from '@willsoto/nestjs-prometheus';
+import { makeCounterProvider, makeHistogramProvider } from '@willsoto/nestjs-prometheus';
 
 export const CHECKINS_TOTAL = 'checkins_total';
 export const QR_ROTATIONS_TOTAL = 'qr_rotations_total';

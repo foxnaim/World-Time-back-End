@@ -13,12 +13,7 @@ import {
 } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
 import { Throttle } from '@nestjs/throttler';
-import {
-  ApiBearerAuth,
-  ApiOperation,
-  ApiResponse,
-  ApiTags,
-} from '@nestjs/swagger';
+import { ApiBearerAuth, ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
 
 import { RATE_LIMITS } from '@/common/throttle/throttle.constants';
 import { SheetsService } from './sheets.service';
@@ -52,20 +47,13 @@ export class SheetsController {
   @ApiResponse({ status: 200, description: 'Export finished; spreadsheet URL returned' })
   @ApiResponse({ status: 400, description: 'Invalid month payload' })
   @ApiResponse({ status: 403, description: 'Insufficient role' })
-  async exportMonthly(
-    @Param('companyId') companyId: string,
-    @Body() body: unknown,
-  ) {
+  async exportMonthly(@Param('companyId') companyId: string, @Body() body: unknown) {
     const parsed = ExportMonthSchema.safeParse(body);
     if (!parsed.success) {
-      throw new BadRequestException(
-        parsed.error.issues.map((i) => i.message).join(', '),
-      );
+      throw new BadRequestException(parsed.error.issues.map((i) => i.message).join(', '));
     }
     const dto: ExportMonthDto = parsed.data;
-    this.logger.log(
-      `export requested company=${companyId} month=${dto.month}`,
-    );
+    this.logger.log(`export requested company=${companyId} month=${dto.month}`);
     return this.sheets.exportCompanyMonth(companyId, dto.month);
   }
 
@@ -76,9 +64,7 @@ export class SheetsController {
   async getLink(@Param('companyId') companyId: string) {
     const stored = await this.sheets.getStored(companyId);
     if (!stored) {
-      throw new NotFoundException(
-        'No spreadsheet has been created for this company yet',
-      );
+      throw new NotFoundException('No spreadsheet has been created for this company yet');
     }
     return {
       spreadsheetId: stored.spreadsheetId,

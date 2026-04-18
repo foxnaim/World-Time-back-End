@@ -80,13 +80,7 @@ export class RedisThrottlerStorage implements ThrottlerStorage {
       return this.incrementMemory(key, ttl, limit, blockDuration, throttlerName);
     }
     try {
-      return await this.incrementRedis(
-        key,
-        ttl,
-        limit,
-        blockDuration,
-        throttlerName,
-      );
+      return await this.incrementRedis(key, ttl, limit, blockDuration, throttlerName);
     } catch (err) {
       // Any Redis mishap should degrade to memory rather than reject the
       // request. A rate-limit miss is a lesser evil than a 500.

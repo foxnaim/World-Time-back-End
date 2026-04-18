@@ -93,10 +93,7 @@ export class PubSubService implements OnModuleDestroy {
    * serves local SSE clients. Returns the number of other replicas that
    * received the message (0 in single-node or degraded mode).
    */
-  async publishToCompany(
-    companyId: string,
-    payload: QRTokenDisplay,
-  ): Promise<number> {
+  async publishToCompany(companyId: string, payload: QRTokenDisplay): Promise<number> {
     if (!this.redis.isRedisReady) return 0;
     try {
       const json = JSON.stringify(payload);

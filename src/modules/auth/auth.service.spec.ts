@@ -56,9 +56,7 @@ function buildInitData(
     .join('\n');
 
   const secretKey = createHmac('sha256', 'WebAppData').update(botToken).digest();
-  const hash =
-    tamperHash ??
-    createHmac('sha256', secretKey).update(dataCheckString).digest('hex');
+  const hash = tamperHash ?? createHmac('sha256', secretKey).update(dataCheckString).digest('hex');
 
   params.set('hash', hash);
   return params.toString();
@@ -94,18 +92,18 @@ describe('AuthService (service-adjacent spec)', () => {
       const now = Math.floor(Date.now() / 1000);
       const initData = buildInitData(botToken, user, now, 'deadbeef'.repeat(8));
 
-      await expect(
-        service.verifyTelegramInitData(initData),
-      ).rejects.toBeInstanceOf(UnauthorizedException);
+      await expect(service.verifyTelegramInitData(initData)).rejects.toBeInstanceOf(
+        UnauthorizedException,
+      );
     });
 
     it('rejects an expired auth_date (>5 minutes old)', async () => {
       const stale = Math.floor(Date.now() / 1000) - 10 * 60;
       const initData = buildInitData(botToken, user, stale);
 
-      await expect(
-        service.verifyTelegramInitData(initData),
-      ).rejects.toBeInstanceOf(UnauthorizedException);
+      await expect(service.verifyTelegramInitData(initData)).rejects.toBeInstanceOf(
+        UnauthorizedException,
+      );
     });
   });
 

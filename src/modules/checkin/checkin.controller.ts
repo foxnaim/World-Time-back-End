@@ -17,13 +17,7 @@ import { AuthGuard } from '@nestjs/passport';
 import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
 import { Throttle } from '@nestjs/throttler';
-import {
-  ApiBearerAuth,
-  ApiHeader,
-  ApiOperation,
-  ApiResponse,
-  ApiTags,
-} from '@nestjs/swagger';
+import { ApiBearerAuth, ApiHeader, ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { interval, map, merge, Observable } from 'rxjs';
 import type { MessageEvent } from '@nestjs/common';
 
@@ -132,9 +126,9 @@ export class CheckinController {
     // don't wait up to 30s for the first message.
     await this.qrService.currentForCompany(companyId);
 
-    const tokens$ = this.sse.stream(companyId).pipe(
-      map((payload): MessageEvent => ({ data: payload })),
-    );
+    const tokens$ = this.sse
+      .stream(companyId)
+      .pipe(map((payload): MessageEvent => ({ data: payload })));
 
     const heartbeat$ = interval(HEARTBEAT_MS).pipe(
       map((): MessageEvent => ({ type: 'ping', data: { t: Date.now() } })),
@@ -153,10 +147,7 @@ export class CheckinController {
   @ApiResponse({ status: 200, description: 'List of check-ins' })
   @ApiResponse({ status: 400, description: 'companyId query param missing' })
   @ApiResponse({ status: 401, description: 'Missing or invalid JWT' })
-  async history(
-    @CurrentUser() user: JwtUser,
-    @Query('companyId') companyId: string,
-  ) {
+  async history(@CurrentUser() user: JwtUser, @Query('companyId') companyId: string) {
     if (!user?.id) throw new UnauthorizedException();
     if (!companyId) {
       throw new BadRequestException('companyId query parameter is required');
@@ -180,10 +171,7 @@ export class CheckinController {
   @ApiResponse({ status: 201, description: 'Manual check-in created' })
   @ApiResponse({ status: 400, description: 'Target employee not found' })
   @ApiResponse({ status: 403, description: 'Caller is not a member or lacks role' })
-  async manual(
-    @CurrentUser() user: JwtUser,
-    @Body() dto: ManualCheckinDto,
-  ) {
+  async manual(@CurrentUser() user: JwtUser, @Body() dto: ManualCheckinDto) {
     if (!user?.id) throw new UnauthorizedException();
 
     // Resolve the caller's role within the target employee's company. We
@@ -243,9 +231,7 @@ export class CheckinController {
       }
     }
 
-    throw new UnauthorizedException(
-      'Display key or employee JWT required for this company',
-    );
+    throw new UnauthorizedException('Display key or employee JWT required for this company');
   }
 
   private isValidDisplayKey(companyId: string, provided: string): boolean {

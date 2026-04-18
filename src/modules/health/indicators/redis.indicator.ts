@@ -1,17 +1,10 @@
 import { Injectable, Logger, OnModuleDestroy } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import {
-  HealthCheckError,
-  HealthIndicator,
-  HealthIndicatorResult,
-} from '@nestjs/terminus';
+import { HealthCheckError, HealthIndicator, HealthIndicatorResult } from '@nestjs/terminus';
 import Redis from 'ioredis';
 
 @Injectable()
-export class RedisHealthIndicator
-  extends HealthIndicator
-  implements OnModuleDestroy
-{
+export class RedisHealthIndicator extends HealthIndicator implements OnModuleDestroy {
   private readonly logger = new Logger(RedisHealthIndicator.name);
   private client: Redis | null = null;
 
@@ -35,10 +28,7 @@ export class RedisHealthIndicator
     return this.client !== null;
   }
 
-  async pingCheck(
-    key: string,
-    options: { timeout?: number } = {},
-  ): Promise<HealthIndicatorResult> {
+  async pingCheck(key: string, options: { timeout?: number } = {}): Promise<HealthIndicatorResult> {
     if (!this.client) {
       return this.getStatus(key, true, {
         status: 'skipped',
@@ -52,10 +42,7 @@ export class RedisHealthIndicator
       const result = await Promise.race([
         this.client.ping(),
         new Promise<never>((_, reject) =>
-          setTimeout(
-            () => reject(new Error(`Redis ping timed out after ${timeout}ms`)),
-            timeout,
-          ),
+          setTimeout(() => reject(new Error(`Redis ping timed out after ${timeout}ms`)), timeout),
         ),
       ]);
       if (result !== 'PONG') {
@@ -66,10 +53,7 @@ export class RedisHealthIndicator
       });
     } catch (err) {
       const message = err instanceof Error ? err.message : String(err);
-      throw new HealthCheckError(
-        `${key} check failed`,
-        this.getStatus(key, false, { message }),
-      );
+      throw new HealthCheckError(`${key} check failed`, this.getStatus(key, false, { message }));
     }
   }
 

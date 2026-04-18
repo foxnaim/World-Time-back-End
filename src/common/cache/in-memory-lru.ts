@@ -46,8 +46,7 @@ export class InMemoryLru<V = unknown> {
   /** Sets a key with optional TTL (seconds). */
   set(key: string, value: V, ttlSec?: number): void {
     if (this.store.has(key)) this.store.delete(key);
-    const expiresAt =
-      ttlSec != null && ttlSec > 0 ? Date.now() + ttlSec * 1000 : null;
+    const expiresAt = ttlSec != null && ttlSec > 0 ? Date.now() + ttlSec * 1000 : null;
     this.store.set(key, { value, expiresAt });
     // Evict oldest while over capacity. Map iteration order is insertion
     // order, so the first key returned by keys() is the oldest (LRU).

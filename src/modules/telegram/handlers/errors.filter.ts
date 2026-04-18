@@ -1,9 +1,4 @@
-import {
-  ArgumentsHost,
-  Catch,
-  ExceptionFilter,
-  Logger,
-} from '@nestjs/common';
+import { ArgumentsHost, Catch, ExceptionFilter, Logger } from '@nestjs/common';
 import { TelegrafArgumentsHost } from 'nestjs-telegraf';
 import { Context } from 'telegraf';
 
@@ -15,8 +10,7 @@ export class TelegramErrorsFilter implements ExceptionFilter {
     const tgHost = TelegrafArgumentsHost.create(host);
     const ctx = tgHost.getContext<Context>();
 
-    const msg =
-      exception instanceof Error ? exception.message : String(exception);
+    const msg = exception instanceof Error ? exception.message : String(exception);
     this.logger.error(
       `Handler error: ${msg}`,
       exception instanceof Error ? exception.stack : undefined,

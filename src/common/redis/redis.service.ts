@@ -37,10 +37,7 @@ export class RedisService implements OnModuleInit, OnModuleDestroy {
    * event per subscribed channel; we fan out to every registered handler
    * ourselves. Using a Set makes unsubscribe O(1) by reference.
    */
-  private readonly subHandlers = new Map<
-    string,
-    Set<(msg: string) => void>
-  >();
+  private readonly subHandlers = new Map<string, Set<(msg: string) => void>>();
 
   /** Whether the global `message` listener has been attached to subClient. */
   private subListenerAttached = false;
@@ -79,10 +76,7 @@ export class RedisService implements OnModuleInit, OnModuleDestroy {
       // still comes up.
       const connectPromise = client.connect();
       const timeout = new Promise<never>((_, reject) =>
-        setTimeout(
-          () => reject(new Error('redis connect timed out after 5s')),
-          5000,
-        ).unref?.(),
+        setTimeout(() => reject(new Error('redis connect timed out after 5s')), 5000).unref?.(),
       );
       await Promise.race([connectPromise, timeout]);
       this.client = client;
@@ -291,10 +285,7 @@ export class RedisService implements OnModuleInit, OnModuleDestroy {
    * the same failure mode every other primitive in this service has when
    * Redis is absent.
    */
-  async lock(
-    key: string,
-    ttlSec: number,
-  ): Promise<(() => Promise<void>) | null> {
+  async lock(key: string, ttlSec: number): Promise<(() => Promise<void>) | null> {
     const token = `${Date.now()}-${Math.random().toString(36).slice(2)}`;
     if (this.client) {
       const res = await this.client.set(key, token, 'EX', ttlSec, 'NX');
@@ -310,9 +301,7 @@ export class RedisService implements OnModuleInit, OnModuleDestroy {
           );
         } catch (err) {
           this.logger.warn(
-            `lock release failed for ${key}: ${
-              err instanceof Error ? err.message : String(err)
-            }`,
+            `lock release failed for ${key}: ${err instanceof Error ? err.message : String(err)}`,
           );
         }
       };
@@ -345,9 +334,7 @@ export class RedisService implements OnModuleInit, OnModuleDestroy {
       await this.client.ping();
       return Date.now() - t0;
     } catch (err) {
-      this.logger.warn(
-        `healthPing failed: ${err instanceof Error ? err.message : String(err)}`,
-      );
+      this.logger.warn(`healthPing failed: ${err instanceof Error ? err.message : String(err)}`);
       return null;
     }
   }
@@ -388,10 +375,7 @@ export class RedisService implements OnModuleInit, OnModuleDestroy {
    * is ever invoked. The caller's fallback path (in-memory Subject) carries
    * the traffic.
    */
-  async subscribe(
-    channel: string,
-    handler: (msg: string) => void,
-  ): Promise<() => Promise<void>> {
+  async subscribe(channel: string, handler: (msg: string) => void): Promise<() => Promise<void>> {
     if (!this.client) {
       // No connection — return a noop unsub. Caller's fallback handles delivery.
       return async () => {};
@@ -461,9 +445,7 @@ export class RedisService implements OnModuleInit, OnModuleDestroy {
             await this.subClient.unsubscribe(channel);
           } catch (err) {
             this.logger.warn(
-              `unsubscribe(${channel}) failed: ${
-                err instanceof Error ? err.message : String(err)
-              }`,
+              `unsubscribe(${channel}) failed: ${err instanceof Error ? err.message : String(err)}`,
             );
           }
         }

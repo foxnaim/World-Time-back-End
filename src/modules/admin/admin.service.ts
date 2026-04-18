@@ -1,7 +1,4 @@
-import {
-  Injectable,
-  NotFoundException,
-} from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { EmployeeStatus, Prisma } from '@prisma/client';
 import { PrismaService } from '@/common/prisma.service';
 
@@ -45,25 +42,19 @@ export class AdminService {
     const startOfDay = new Date();
     startOfDay.setHours(0, 0, 0, 0);
 
-    const [
-      users,
-      companies,
-      employees,
-      activeEmployees,
-      checkinsToday,
-      activeProjects,
-    ] = await Promise.all([
-      this.prisma.user.count(),
-      this.prisma.company.count(),
-      this.prisma.employee.count(),
-      this.prisma.employee.count({
-        where: { status: EmployeeStatus.ACTIVE },
-      }),
-      this.prisma.checkIn.count({
-        where: { timestamp: { gte: startOfDay } },
-      }),
-      this.prisma.project.count({ where: { status: 'ACTIVE' } }),
-    ]);
+    const [users, companies, employees, activeEmployees, checkinsToday, activeProjects] =
+      await Promise.all([
+        this.prisma.user.count(),
+        this.prisma.company.count(),
+        this.prisma.employee.count(),
+        this.prisma.employee.count({
+          where: { status: EmployeeStatus.ACTIVE },
+        }),
+        this.prisma.checkIn.count({
+          where: { timestamp: { gte: startOfDay } },
+        }),
+        this.prisma.project.count({ where: { status: 'ACTIVE' } }),
+      ]);
 
     return {
       users,
@@ -104,9 +95,7 @@ export class AdminService {
       where,
       take: take + 1,
       orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
-      ...(params.cursor
-        ? { cursor: { id: params.cursor }, skip: 1 }
-        : {}),
+      ...(params.cursor ? { cursor: { id: params.cursor }, skip: 1 } : {}),
       select: {
         id: true,
         name: true,

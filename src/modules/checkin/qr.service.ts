@@ -46,11 +46,7 @@ interface TokenPayload {
  */
 function base64urlEncode(input: Buffer | string): string {
   const buf = typeof input === 'string' ? Buffer.from(input, 'utf8') : input;
-  return buf
-    .toString('base64')
-    .replace(/\+/g, '-')
-    .replace(/\//g, '_')
-    .replace(/=+$/g, '');
+  return buf.toString('base64').replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/g, '');
 }
 
 function base64urlDecode(input: string): Buffer {
@@ -76,9 +72,7 @@ export class QrService implements OnModuleInit {
   onModuleInit(): void {
     const secret = this.config.get<string>('QR_HMAC_SECRET');
     if (!secret || secret.length < 16) {
-      throw new Error(
-        'QR_HMAC_SECRET must be configured (>=16 chars) for QR token signing',
-      );
+      throw new Error('QR_HMAC_SECRET must be configured (>=16 chars) for QR token signing');
     }
     this.hmacSecret = secret;
   }
@@ -88,9 +82,7 @@ export class QrService implements OnModuleInit {
   // ---------------------------------------------------------------------------
 
   private sign(payloadB64: string): string {
-    return base64urlEncode(
-      createHmac('sha256', this.hmacSecret).update(payloadB64).digest(),
-    );
+    return base64urlEncode(createHmac('sha256', this.hmacSecret).update(payloadB64).digest());
   }
 
   private encodeToken(payload: TokenPayload): string {
@@ -269,13 +261,9 @@ export class QrService implements OnModuleInit {
           }),
         ),
       );
-      this.logger.debug(
-        `Rotated QR for ${activeCompanies.length} active company(ies)`,
-      );
+      this.logger.debug(`Rotated QR for ${activeCompanies.length} active company(ies)`);
     } catch (err) {
-      this.logger.error(
-        `rotateAll crashed: ${err instanceof Error ? err.message : String(err)}`,
-      );
+      this.logger.error(`rotateAll crashed: ${err instanceof Error ? err.message : String(err)}`);
     }
   }
 }

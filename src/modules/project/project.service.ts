@@ -36,14 +36,8 @@ export class ProjectService {
         userId,
         name: dto.name,
         description: dto.description ?? null,
-        hourlyRate:
-          dto.hourlyRate !== undefined
-            ? new Prisma.Decimal(dto.hourlyRate)
-            : null,
-        fixedPrice:
-          dto.fixedPrice !== undefined
-            ? new Prisma.Decimal(dto.fixedPrice)
-            : null,
+        hourlyRate: dto.hourlyRate !== undefined ? new Prisma.Decimal(dto.hourlyRate) : null,
+        fixedPrice: dto.fixedPrice !== undefined ? new Prisma.Decimal(dto.fixedPrice) : null,
         currency: dto.currency ?? 'RUB',
       },
     });
@@ -155,14 +149,10 @@ export class ProjectService {
   async delete(userId: string, id: string, force: boolean) {
     const project = await this.assertOwnership(userId, id);
     if (project.status !== 'ARCHIVED' && !force) {
-      throw new ConflictException(
-        'Project is not archived. Archive it first or pass ?force=true.',
-      );
+      throw new ConflictException('Project is not archived. Archive it first or pass ?force=true.');
     }
     await this.prisma.project.delete({ where: { id } });
-    this.logger.log(
-      `project.delete id=${id} userId=${userId} force=${force}`,
-    );
+    this.logger.log(`project.delete id=${id} userId=${userId} force=${force}`);
     return { ok: true };
   }
 
@@ -177,11 +167,7 @@ export class ProjectService {
    *
    * @param month format `YYYY-MM`
    */
-  async monthlySummary(
-    userId: string,
-    id: string,
-    month: string,
-  ): Promise<ProjectMonthlySummary> {
+  async monthlySummary(userId: string, id: string, month: string): Promise<ProjectMonthlySummary> {
     const project = await this.assertOwnership(userId, id);
 
     const parsed = parse(`${month}-01`, 'yyyy-MM-dd', new Date());
@@ -202,10 +188,8 @@ export class ProjectService {
     const totalSeconds = agg._sum.durationSec ?? 0;
     const hours = totalSeconds / 3600;
 
-    const declaredRate =
-      project.hourlyRate != null ? Number(project.hourlyRate) : null;
-    const fixedPrice =
-      project.fixedPrice != null ? Number(project.fixedPrice) : null;
+    const declaredRate = project.hourlyRate != null ? Number(project.hourlyRate) : null;
+    const fixedPrice = project.fixedPrice != null ? Number(project.fixedPrice) : null;
 
     let totalIncome: number | null = null;
     if (declaredRate != null) {
@@ -214,8 +198,7 @@ export class ProjectService {
       totalIncome = fixedPrice;
     }
 
-    const realHourlyRate =
-      totalIncome != null && hours > 0 ? totalIncome / hours : null;
+    const realHourlyRate = totalIncome != null && hours > 0 ? totalIncome / hours : null;
 
     return {
       projectId: project.id,
@@ -278,8 +261,7 @@ export class ProjectService {
     status: string;
     hasFixedPrice: boolean;
   }): string {
-    const { hours, declaredRate, realHourlyRate, currency, status, hasFixedPrice } =
-      args;
+    const { hours, declaredRate, realHourlyRate, currency, status, hasFixedPrice } = args;
     const hoursStr = this.formatHours(hours);
 
     if (hours === 0) {

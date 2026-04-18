@@ -21,9 +21,7 @@ export const COMPANY_ROLES_KEY = 'companyRoles';
  *   @Patch(':id')
  *   update() { ... }
  */
-export const RequireRole = (
-  ...roles: EmployeeRole[]
-): MethodDecorator & ClassDecorator =>
+export const RequireRole = (...roles: EmployeeRole[]): MethodDecorator & ClassDecorator =>
   SetMetadata(COMPANY_ROLES_KEY, roles);
 
 interface AuthedRequest {
@@ -45,9 +43,10 @@ export class CompanyRoleGuard implements CanActivate {
   ) {}
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
-    const requiredRoles = this.reflector.getAllAndOverride<
-      EmployeeRole[] | undefined
-    >(COMPANY_ROLES_KEY, [context.getHandler(), context.getClass()]);
+    const requiredRoles = this.reflector.getAllAndOverride<EmployeeRole[] | undefined>(
+      COMPANY_ROLES_KEY,
+      [context.getHandler(), context.getClass()],
+    );
 
     // No @RequireRole applied — guard is a no-op.
     if (!requiredRoles || requiredRoles.length === 0) return true;
@@ -58,12 +57,9 @@ export class CompanyRoleGuard implements CanActivate {
       throw new UnauthorizedException('Authentication required');
     }
 
-    const companyId =
-      request.params?.id ?? request.params?.companyId ?? undefined;
+    const companyId = request.params?.id ?? request.params?.companyId ?? undefined;
     if (!companyId) {
-      throw new ForbiddenException(
-        'Company identifier missing from route params',
-      );
+      throw new ForbiddenException('Company identifier missing from route params');
     }
 
     const employee = await this.prisma.employee.findFirst({
@@ -75,9 +71,7 @@ export class CompanyRoleGuard implements CanActivate {
     }
 
     if (!requiredRoles.includes(employee.role)) {
-      throw new ForbiddenException(
-        `Requires one of roles: ${requiredRoles.join(', ')}`,
-      );
+      throw new ForbiddenException(`Requires one of roles: ${requiredRoles.join(', ')}`);
     }
 
     // Stash the employee on the request so controllers/services can reuse it.

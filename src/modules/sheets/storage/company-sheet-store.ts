@@ -1,10 +1,7 @@
 import { promises as fs } from 'fs';
 import * as path from 'path';
 
-import type {
-  CompanySheetStoreFile,
-  StoredCompanySheet,
-} from '../sheets.types';
+import type { CompanySheetStoreFile, StoredCompanySheet } from '../sheets.types';
 
 /**
  * Filesystem-backed JSON store for the mapping
@@ -46,17 +43,12 @@ export async function read(): Promise<CompanySheetStoreFile> {
   }
 }
 
-export async function get(
-  companyId: string,
-): Promise<StoredCompanySheet | undefined> {
+export async function get(companyId: string): Promise<StoredCompanySheet | undefined> {
   const all = await read();
   return all[companyId];
 }
 
-export async function write(
-  companyId: string,
-  entry: StoredCompanySheet,
-): Promise<void> {
+export async function write(companyId: string, entry: StoredCompanySheet): Promise<void> {
   await ensureDir();
   const all = await read();
   all[companyId] = entry;

@@ -129,16 +129,8 @@ export class AuthService {
     const redis = this.redis;
     if (redis) {
       void redis
-        .set(
-          AuthService.OTC_KEY_PREFIX + code,
-          telegramId.toString(),
-          AuthService.OTC_TTL_SEC,
-        )
-        .catch((err) =>
-          this.logger.warn(
-            `redis set otc failed: ${(err as Error).message ?? err}`,
-          ),
-        );
+        .set(AuthService.OTC_KEY_PREFIX + code, telegramId.toString(), AuthService.OTC_TTL_SEC)
+        .catch((err) => this.logger.warn(`redis set otc failed: ${(err as Error).message ?? err}`));
     }
     this.logger.log(`issued OTC telegramId=${telegramId.toString()}`);
     return code;
@@ -151,9 +143,7 @@ export class AuthService {
     if (entry) {
       this.otcStore.delete(code);
       if (redis) {
-        void redis
-          .del(AuthService.OTC_KEY_PREFIX + code)
-          .catch(() => undefined);
+        void redis.del(AuthService.OTC_KEY_PREFIX + code).catch(() => undefined);
       }
       if (entry.expiresAt < Date.now()) return null;
       return entry.telegramId;
@@ -236,10 +226,9 @@ export class AuthService {
       throw new InternalServerErrorException('JWT refresh secret not configured');
     }
     try {
-      const payload = await this.jwt.verifyAsync<{ sub: string; typ?: string }>(
-        refreshToken,
-        { secret: refreshSecret },
-      );
+      const payload = await this.jwt.verifyAsync<{ sub: string; typ?: string }>(refreshToken, {
+        secret: refreshSecret,
+      });
       if (payload.typ !== 'refresh' || !payload.sub) {
         throw new UnauthorizedException('Invalid refresh token');
       }

@@ -44,9 +44,7 @@ export class BillingService {
     });
 
     if (current >= seatsLimit) {
-      throw new ForbiddenException(
-        'Достигнут лимит сотрудников на текущем тарифе',
-      );
+      throw new ForbiddenException('Достигнут лимит сотрудников на текущем тарифе');
     }
   }
 

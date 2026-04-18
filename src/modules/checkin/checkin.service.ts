@@ -22,12 +22,7 @@ import { QrService } from './qr.service';
 const GEOFENCE_BUFFER_M = 50;
 
 /** Haversine distance in metres between two lat/lng points. */
-function haversineMeters(
-  lat1: number,
-  lon1: number,
-  lat2: number,
-  lon2: number,
-): number {
+function haversineMeters(lat1: number, lon1: number, lat2: number, lon2: number): number {
   const R = 6371_000;
   const toRad = (deg: number) => (deg * Math.PI) / 180;
   const dLat = toRad(lat2 - lat1);
@@ -127,18 +122,11 @@ export class CheckinService {
     });
     await this.qr.consume(dto.token, employee.id);
 
-    const isLate =
-      type === CheckInType.IN
-        ? this.isLate(now, company.workStartHour)
-        : false;
+    const isLate = type === CheckInType.IN ? this.isLate(now, company.workStartHour) : false;
     const lateMinutes =
-      type === CheckInType.IN
-        ? this.lateMinutes(now, company.workStartHour)
-        : null;
+      type === CheckInType.IN ? this.lateMinutes(now, company.workStartHour) : null;
 
-    this.logger.log(
-      `CheckIn created employee=${employee.id} type=${type} late=${isLate}`,
-    );
+    this.logger.log(`CheckIn created employee=${employee.id} type=${type} late=${isLate}`);
 
     return {
       id: checkIn.id,
@@ -237,12 +225,9 @@ export class CheckinService {
     });
     if (
       !actorEmployee ||
-      (actorEmployee.role !== EmployeeRole.OWNER &&
-        actorEmployee.role !== EmployeeRole.MANAGER)
+      (actorEmployee.role !== EmployeeRole.OWNER && actorEmployee.role !== EmployeeRole.MANAGER)
     ) {
-      throw new ForbiddenException(
-        'You must be OWNER or MANAGER of this employee\'s company',
-      );
+      throw new ForbiddenException("You must be OWNER or MANAGER of this employee's company");
     }
 
     const timestamp = dto.timestamp ? new Date(dto.timestamp) : new Date();
@@ -267,13 +252,9 @@ export class CheckinService {
 
     const type = dto.type as CheckInType;
     const isLate =
-      type === CheckInType.IN
-        ? this.isLate(timestamp, employee.company.workStartHour)
-        : false;
+      type === CheckInType.IN ? this.isLate(timestamp, employee.company.workStartHour) : false;
     const lateMinutes =
-      type === CheckInType.IN
-        ? this.lateMinutes(timestamp, employee.company.workStartHour)
-        : null;
+      type === CheckInType.IN ? this.lateMinutes(timestamp, employee.company.workStartHour) : null;
 
     return {
       id: checkIn.id,

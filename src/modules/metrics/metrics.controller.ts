@@ -1,11 +1,4 @@
-import {
-  Controller,
-  Get,
-  Header,
-  Req,
-  Res,
-  UnauthorizedException,
-} from '@nestjs/common';
+import { Controller, Get, Header, Req, Res, UnauthorizedException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import type { Request, Response } from 'express';
 import { register as promRegister } from 'prom-client';

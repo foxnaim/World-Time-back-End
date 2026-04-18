@@ -54,10 +54,7 @@ export class AdminController {
 
   /** Look up a user by telegramId or phone fragment. */
   @Get('users')
-  listUsers(
-    @Query('telegramId') telegramId?: string,
-    @Query('phone') phone?: string,
-  ) {
+  listUsers(@Query('telegramId') telegramId?: string, @Query('phone') phone?: string) {
     return this.admin.listUsers({ telegramId, phone });
   }
 }

@@ -71,10 +71,7 @@ export class AnalyticsService {
   // Company-level (B2B)
   // ---------------------------------------------------------------------------
 
-  async getCompanyLateStats(
-    companyId: string,
-    month: string,
-  ): Promise<CompanyLateStats[]> {
+  async getCompanyLateStats(companyId: string, month: string): Promise<CompanyLateStats[]> {
     const company = await this.loadCompany(companyId);
     const { start, end } = buildMonthRange(month);
 
@@ -104,21 +101,14 @@ export class AnalyticsService {
         )[0];
         if (!first) continue;
         const { hour, minute } = localParts(first.timestamp, company.timezone);
-        const lateMin = computeLateMinutes(
-          hour,
-          minute,
-          company.workStartHour,
-          LATE_GRACE_MINUTES,
-        );
+        const lateMin = computeLateMinutes(hour, minute, company.workStartHour, LATE_GRACE_MINUTES);
         if (lateMin > 0) {
           lateCount += 1;
           totalLateMinutes += lateMin;
         }
       }
       const avgLateMinutes =
-        lateCount > 0
-          ? Math.round((totalLateMinutes / lateCount) * 100) / 100
-          : 0;
+        lateCount > 0 ? Math.round((totalLateMinutes / lateCount) * 100) / 100 : 0;
       return {
         employeeId: emp.id,
         name: this.fullName(emp.user.firstName, emp.user.lastName),
@@ -129,11 +119,7 @@ export class AnalyticsService {
     });
   }
 
-  async getCompanyRanking(
-    companyId: string,
-    month: string,
-    limit = 10,
-  ): Promise<CompanyRanking[]> {
+  async getCompanyRanking(companyId: string, month: string, limit = 10): Promise<CompanyRanking[]> {
     const stats = await this.getCompanyLateStats(companyId, month);
 
     const scored = stats
@@ -158,10 +144,7 @@ export class AnalyticsService {
     }));
   }
 
-  async getCompanyOvertime(
-    companyId: string,
-    month: string,
-  ): Promise<OvertimeReport[]> {
+  async getCompanyOvertime(companyId: string, month: string): Promise<OvertimeReport[]> {
     const company = await this.loadCompany(companyId);
     const { start, end } = buildMonthRange(month);
 
@@ -212,10 +195,7 @@ export class AnalyticsService {
     });
   }
 
-  async getCompanySummary(
-    companyId: string,
-    month: string,
-  ): Promise<CompanySummary> {
+  async getCompanySummary(companyId: string, month: string): Promise<CompanySummary> {
     const [lateStats, overtime, employeeCount] = await Promise.all([
       this.getCompanyLateStats(companyId, month),
       this.getCompanyOvertime(companyId, month),
@@ -225,18 +205,11 @@ export class AnalyticsService {
     ]);
 
     const totalLateCount = lateStats.reduce((acc, s) => acc + s.lateCount, 0);
-    const totalLateMinutes = lateStats.reduce(
-      (acc, s) => acc + s.totalLateMinutes,
-      0,
-    );
+    const totalLateMinutes = lateStats.reduce((acc, s) => acc + s.totalLateMinutes, 0);
     const avgLateMinutes =
-      totalLateCount > 0
-        ? Math.round((totalLateMinutes / totalLateCount) * 100) / 100
-        : 0;
+      totalLateCount > 0 ? Math.round((totalLateMinutes / totalLateCount) * 100) / 100 : 0;
     const totalOvertimeHours =
-      Math.round(
-        overtime.reduce((acc, o) => acc + o.overtimeHours, 0) * 100,
-      ) / 100;
+      Math.round(overtime.reduce((acc, o) => acc + o.overtimeHours, 0) * 100) / 100;
 
     return {
       totalEmployees: employeeCount,
@@ -328,8 +301,7 @@ export class AnalyticsService {
     }
 
     const totalHours = totalSeconds / 3600;
-    const effectiveRate =
-      totalHours > 0 ? Math.round((totalIncome / totalHours) * 100) / 100 : 0;
+    const effectiveRate = totalHours > 0 ? Math.round((totalIncome / totalHours) * 100) / 100 : 0;
 
     return {
       userId,
@@ -363,17 +335,13 @@ export class AnalyticsService {
     }
 
     const now = new Date();
-    const currentMonth = `${now.getUTCFullYear()}-${String(
-      now.getUTCMonth() + 1,
-    ).padStart(2, '0')}`;
-    const bucketLabels = lastNMonths(
-      currentMonth,
-      Math.max(1, Math.min(36, months)),
-    );
+    const currentMonth = `${now.getUTCFullYear()}-${String(now.getUTCMonth() + 1).padStart(
+      2,
+      '0',
+    )}`;
+    const bucketLabels = lastNMonths(currentMonth, Math.max(1, Math.min(36, months)));
     const { start: rangeStart } = buildMonthRange(bucketLabels[0]!);
-    const { end: rangeEnd } = buildMonthRange(
-      bucketLabels[bucketLabels.length - 1]!,
-    );
+    const { end: rangeEnd } = buildMonthRange(bucketLabels[bucketLabels.length - 1]!);
 
     // One trip to the DB for all relevant time entries; bucket in-memory so we
     // can reuse the same income-attribution rules as the real-rate query.
@@ -416,8 +384,7 @@ export class AnalyticsService {
         periodEnd: end.toISOString(),
         totalSeconds: seconds,
         totalIncome: Math.round(income * 100) / 100,
-        effectiveRate:
-          hours > 0 ? Math.round((income / hours) * 100) / 100 : 0,
+        effectiveRate: hours > 0 ? Math.round((income / hours) * 100) / 100 : 0,
         currency: project.currency,
       });
     }
@@ -430,8 +397,7 @@ export class AnalyticsService {
         for (const p of working) {
           p.totalIncome = Math.round(slice * 100) / 100;
           const hours = p.totalSeconds / 3600;
-          p.effectiveRate =
-            hours > 0 ? Math.round((slice / hours) * 100) / 100 : 0;
+          p.effectiveRate = hours > 0 ? Math.round((slice / hours) * 100) / 100 : 0;
         }
       }
     }

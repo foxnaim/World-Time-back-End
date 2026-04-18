@@ -46,9 +46,7 @@ export class InviteTokenService {
    *
    * @returns the generated token string and computed expiry.
    */
-  async issue(
-    payload: InviteTokenPayload,
-  ): Promise<{ token: string; expiresAt: Date }> {
+  async issue(payload: InviteTokenPayload): Promise<{ token: string; expiresAt: Date }> {
     const token = nanoid(16);
     const expiresAt = new Date(Date.now() + TTL_MS);
 
@@ -59,8 +57,7 @@ export class InviteTokenService {
         role: payload.role as EmployeeRole,
         position: payload.position ?? null,
         monthlySalary:
-          payload.monthlySalary === undefined ||
-          payload.monthlySalary === null
+          payload.monthlySalary === undefined || payload.monthlySalary === null
             ? null
             : (payload.monthlySalary as Prisma.Decimal),
         hourlyRate:
@@ -80,10 +77,7 @@ export class InviteTokenService {
    * the token is unknown, expired, or already consumed. Marks the row as
    * consumed by `consumedByUserId` at the current time.
    */
-  async consume(
-    token: string,
-    consumedByUserId: string,
-  ): Promise<StoredInvite | null> {
+  async consume(token: string, consumedByUserId: string): Promise<StoredInvite | null> {
     const now = new Date();
 
     // Use updateMany with guard conditions so concurrent callers race safely:
@@ -141,10 +135,7 @@ export class InviteTokenService {
 
     const result = await this.prisma.inviteToken.deleteMany({
       where: {
-        OR: [
-          { consumedAt: null, expiresAt: { lt: now } },
-          { consumedAt: { lt: consumedCutoff } },
-        ],
+        OR: [{ consumedAt: null, expiresAt: { lt: now } }, { consumedAt: { lt: consumedCutoff } }],
       },
     });
 

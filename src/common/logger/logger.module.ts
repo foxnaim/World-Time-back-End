@@ -26,8 +26,7 @@ function isExcluded(url: string | undefined): boolean {
             const headerId =
               (req.headers['x-request-id'] as string | undefined) ??
               (req.headers['X-Request-Id'] as unknown as string | undefined);
-            const id =
-              headerId && headerId.length > 0 ? headerId : randomUUID();
+            const id = headerId && headerId.length > 0 ? headerId : randomUUID();
             res.setHeader('X-Request-Id', id);
             return id;
           },
@@ -82,12 +81,7 @@ function isExcluded(url: string | undefined): boolean {
             req: IncomingMessage,
             res: ServerResponse & { statusCode: number },
             err?: Error,
-          ) =>
-            err || res.statusCode >= 500
-              ? 'error'
-              : res.statusCode >= 400
-                ? 'warn'
-                : 'info',
+          ) => (err || res.statusCode >= 500 ? 'error' : res.statusCode >= 400 ? 'warn' : 'info'),
           transport:
             process.env.NODE_ENV === 'production'
               ? undefined

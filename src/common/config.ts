@@ -6,8 +6,7 @@ const isProd = process.env.NODE_ENV === 'production';
 const devOrProdString = (minLen: number) =>
   isProd ? z.string().min(minLen) : z.string().optional().default('');
 
-const devOrProdUrl = () =>
-  isProd ? z.string().url() : z.string().min(1);
+const devOrProdUrl = () => (isProd ? z.string().url() : z.string().min(1));
 
 // SENTRY_DSN: accept empty/unset OR a valid URL. Never fail dev on this.
 const optionalUrl = z
@@ -36,9 +35,7 @@ export type AppConfig = z.infer<typeof appConfigSchema>;
 export function validate(config: Record<string, unknown>): AppConfig {
   const parsed = appConfigSchema.safeParse(config);
   if (!parsed.success) {
-    const issues = parsed.error.issues
-      .map((i) => `${i.path.join('.')}: ${i.message}`)
-      .join('; ');
+    const issues = parsed.error.issues.map((i) => `${i.path.join('.')}: ${i.message}`).join('; ');
     throw new Error(`Invalid environment configuration: ${issues}`);
   }
 
@@ -51,7 +48,8 @@ export function validate(config: Record<string, unknown>): AppConfig {
     if (!data.JWT_REFRESH_SECRET) data.JWT_REFRESH_SECRET = 'dev-jwt-refresh-change-me-please-32b';
     if (!data.QR_HMAC_SECRET) data.QR_HMAC_SECRET = 'dev-qr-hmac-change-me-please-32b-ok';
     if (!data.TELEGRAM_BOT_TOKEN) data.TELEGRAM_BOT_TOKEN = '';
-    if (!data.DATABASE_URL) data.DATABASE_URL = 'postgres://worktime:worktime@localhost:5432/worktime';
+    if (!data.DATABASE_URL)
+      data.DATABASE_URL = 'postgres://worktime:worktime@localhost:5432/worktime';
     if (!data.REDIS_URL) data.REDIS_URL = 'redis://localhost:6379';
     if (!data.WEB_URL) data.WEB_URL = 'http://localhost:3000';
   }

@@ -2,11 +2,7 @@ import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import type { Transporter, SendMailOptions } from 'nodemailer';
 
-import {
-  SendAuthLinkDto,
-  SendEmployeeInviteDto,
-  SendMonthlyReportReadyDto,
-} from './dto';
+import { SendAuthLinkDto, SendEmployeeInviteDto, SendMonthlyReportReadyDto } from './dto';
 import {
   renderAuthLink,
   renderEmployeeInvite,
@@ -71,11 +67,7 @@ export class NotificationService {
    * first use so missing env vars don't break app startup — we only notice
    * at the first send attempt, at which point we log and return.
    */
-  private async send(params: {
-    to: string;
-    rendered: RenderedEmail;
-    kind: string;
-  }): Promise<void> {
+  private async send(params: { to: string; rendered: RenderedEmail; kind: string }): Promise<void> {
     const { to, rendered, kind } = params;
     const transporter = await this.getTransporter();
     if (!transporter || !this.smtpConfig) {
@@ -163,10 +155,7 @@ export class NotificationService {
         secure: port === 465,
         auth,
       });
-      this.logger.log(
-        { host, port, authenticated: Boolean(auth) },
-        'SMTP transporter initialized',
-      );
+      this.logger.log({ host, port, authenticated: Boolean(auth) }, 'SMTP transporter initialized');
     } catch (err) {
       this.logger.warn(
         { err: err instanceof Error ? err.message : String(err) },

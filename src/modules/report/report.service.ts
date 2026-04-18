@@ -98,11 +98,7 @@ export class ReportService {
   // B2C: freelance invoice PDF
   // ---------------------------------------------------------------------------
 
-  async buildInvoicePdf(
-    userId: string,
-    month: string,
-    projectId?: string,
-  ): Promise<Readable> {
+  async buildInvoicePdf(userId: string, month: string, projectId?: string): Promise<Readable> {
     const user = await this.prisma.user.findUnique({
       where: { id: userId },
       select: { id: true, firstName: true, lastName: true, username: true },
@@ -248,19 +244,13 @@ export class ReportService {
 
   private paintPageBackground(doc: PDFKit.PDFDocument): void {
     doc.save();
-    doc
-      .rect(0, 0, doc.page.width, doc.page.height)
-      .fill(COLORS.cream);
+    doc.rect(0, 0, doc.page.width, doc.page.height).fill(COLORS.cream);
     doc.restore();
     // Default ink colour for anything subsequent.
     doc.fillColor(COLORS.stone);
   }
 
-  private drawAttendanceHeader(
-    doc: PDFKit.PDFDocument,
-    companyName: string,
-    month: string,
-  ): void {
+  private drawAttendanceHeader(doc: PDFKit.PDFDocument, companyName: string, month: string): void {
     const top = MARGIN;
     const right = doc.page.width - MARGIN;
 
@@ -294,10 +284,7 @@ export class ReportService {
     doc.y += SPACING.md;
   }
 
-  private drawAttendanceTable(
-    doc: PDFKit.PDFDocument,
-    rows: AttendanceRow[],
-  ): void {
+  private drawAttendanceTable(doc: PDFKit.PDFDocument, rows: AttendanceRow[]): void {
     const left = MARGIN;
     const fullWidth = doc.page.width - MARGIN * 2;
 
@@ -350,8 +337,7 @@ export class ReportService {
       for (const c of cols) {
         const v = this.formatAttendanceCell(row, c.key as keyof AttendanceRow);
         const isLateHighlight =
-          (c.key === 'lateCount' || c.key === 'totalLateMinutes') &&
-          Number(v) > 0;
+          (c.key === 'lateCount' || c.key === 'totalLateMinutes') && Number(v) > 0;
         doc.fillColor(isLateHighlight ? COLORS.red : COLORS.stone);
         doc.text(v, x, rowY, { width: c.width, align: c.align });
         x += c.width;
@@ -362,10 +348,7 @@ export class ReportService {
     doc.y += SPACING.md;
   }
 
-  private formatAttendanceCell(
-    row: AttendanceRow,
-    key: keyof AttendanceRow,
-  ): string {
+  private formatAttendanceCell(row: AttendanceRow, key: keyof AttendanceRow): string {
     const v = row[key];
     if (typeof v === 'number') {
       if (key === 'hours' || key === 'overtime') return v.toFixed(1);
@@ -374,10 +357,7 @@ export class ReportService {
     return String(v);
   }
 
-  private drawAttendanceSummary(
-    doc: PDFKit.PDFDocument,
-    rows: AttendanceRow[],
-  ): void {
+  private drawAttendanceSummary(doc: PDFKit.PDFDocument, rows: AttendanceRow[]): void {
     const totalHours = rows.reduce((s, r) => s + r.hours, 0);
     const totalLates = rows.reduce((s, r) => s + r.lateCount, 0);
     const totalLateMin = rows.reduce((s, r) => s + r.totalLateMinutes, 0);
@@ -395,11 +375,7 @@ export class ReportService {
 
     // Summary card — coral rule top + stone fill text.
     doc.save();
-    doc
-      .rect(left, boxTop, fullWidth, boxHeight)
-      .lineWidth(0.8)
-      .strokeColor(COLORS.coral)
-      .stroke();
+    doc.rect(left, boxTop, fullWidth, boxHeight).lineWidth(0.8).strokeColor(COLORS.coral).stroke();
     doc.restore();
 
     useFont(doc, FONTS.body, 9).fillColor(COLORS.coral);
@@ -449,9 +425,7 @@ export class ReportService {
 
     // Invoice number — deterministic from user + month so reruns collide
     // intentionally.
-    const invoiceNo = `INV-${month.replace('-', '')}-${user.id
-      .slice(-6)
-      .toUpperCase()}`;
+    const invoiceNo = `INV-${month.replace('-', '')}-${user.id.slice(-6).toUpperCase()}`;
 
     useFont(doc, FONTS.heading, 32).fillColor(COLORS.stone);
     doc.text('Invoice', MARGIN, top + SPACING.md);
@@ -461,9 +435,7 @@ export class ReportService {
       characterSpacing: 1.4,
     });
 
-    const displayName = user.lastName
-      ? `${user.firstName} ${user.lastName}`
-      : user.firstName;
+    const displayName = user.lastName ? `${user.firstName} ${user.lastName}` : user.firstName;
 
     useFont(doc, FONTS.body, 10).fillColor(COLORS.stone);
     const metaY = top + SPACING.md + 64;
@@ -555,8 +527,7 @@ export class ReportService {
     // Pick the dominant currency. We don't multi-currency convert — invoice
     // across mixed currencies would be ambiguous, so we render per-line
     // currency symbols and total in the most common one.
-    const currency =
-      lines.find((l) => l.currency)?.currency ?? 'RUB';
+    const currency = lines.find((l) => l.currency)?.currency ?? 'RUB';
 
     if (doc.y > doc.page.height - MARGIN - 80) {
       doc.addPage();
@@ -569,26 +540,17 @@ export class ReportService {
     const boxHeight = 56;
 
     doc.save();
-    doc
-      .rect(left, boxTop, fullWidth, boxHeight)
-      .fill(COLORS.stone);
+    doc.rect(left, boxTop, fullWidth, boxHeight).fill(COLORS.stone);
     doc.restore();
 
     useFont(doc, FONTS.body, 9).fillColor(COLORS.cream);
-    doc.text(
-      'TOTAL DUE',
-      left + SPACING.md,
-      boxTop + SPACING.md + 4,
-      { characterSpacing: 1.6 },
-    );
+    doc.text('TOTAL DUE', left + SPACING.md, boxTop + SPACING.md + 4, { characterSpacing: 1.6 });
 
     useFont(doc, FONTS.headingMedium, 22).fillColor(COLORS.cream);
-    doc.text(
-      this.money(total, currency),
-      left,
-      boxTop + SPACING.md,
-      { width: fullWidth - SPACING.md, align: 'right' },
-    );
+    doc.text(this.money(total, currency), left, boxTop + SPACING.md, {
+      width: fullWidth - SPACING.md,
+      align: 'right',
+    });
 
     doc.y = boxTop + boxHeight + SPACING.md;
   }
@@ -610,18 +572,13 @@ export class ReportService {
       }
       const footY = doc.page.height - MARGIN + 10;
       useFont(doc, FONTS.body, 8).fillColor(COLORS.muted);
-      doc.text(
-        `Generated ${format(new Date(), "d LLL yyyy 'at' HH:mm")} · Tact`,
-        MARGIN,
-        footY,
-        { width: doc.page.width - MARGIN * 2 - 40 },
-      );
-      doc.text(
-        `${i + 1} / ${pages}`,
-        doc.page.width - MARGIN - 40,
-        footY,
-        { width: 40, align: 'right' },
-      );
+      doc.text(`Generated ${format(new Date(), "d LLL yyyy 'at' HH:mm")} · Tact`, MARGIN, footY, {
+        width: doc.page.width - MARGIN * 2 - 40,
+      });
+      doc.text(`${i + 1} / ${pages}`, doc.page.width - MARGIN - 40, footY, {
+        width: 40,
+        align: 'right',
+      });
     }
   }
 

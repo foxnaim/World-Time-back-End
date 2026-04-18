@@ -87,9 +87,7 @@ export class ReportController {
     res.setHeader('Content-Type', 'application/pdf');
     res.setHeader(
       'Content-Disposition',
-      `attachment; filename="invoice-${m}${
-        projectId ? `-${safeFilename(projectId)}` : ''
-      }.pdf"`,
+      `attachment; filename="invoice-${m}${projectId ? `-${safeFilename(projectId)}` : ''}.pdf"`,
     );
     res.setHeader('Cache-Control', 'private, no-store');
 

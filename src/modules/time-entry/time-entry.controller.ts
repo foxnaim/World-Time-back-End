@@ -9,13 +9,7 @@ import {
   Post,
   Query,
 } from '@nestjs/common';
-import {
-  ApiBearerAuth,
-  ApiOperation,
-  ApiQuery,
-  ApiResponse,
-  ApiTags,
-} from '@nestjs/swagger';
+import { ApiBearerAuth, ApiOperation, ApiQuery, ApiResponse, ApiTags } from '@nestjs/swagger';
 
 import { CurrentUser } from '@/common/decorators/current-user.decorator';
 
@@ -42,10 +36,7 @@ export class TimeEntryController {
   @ApiOperation({ summary: 'Start a timer on a project' })
   @ApiResponse({ status: 200, description: 'Timer started; entry returned' })
   @ApiResponse({ status: 409, description: 'Another timer is already running' })
-  start(
-    @CurrentUser() user: JwtUser,
-    @Body() dto: StartTimerDto,
-  ) {
+  start(@CurrentUser() user: JwtUser, @Body() dto: StartTimerDto) {
     return this.timeEntryService.start(user.id, dto.projectId);
   }
 
@@ -54,10 +45,7 @@ export class TimeEntryController {
   @ApiOperation({ summary: 'Stop a running timer' })
   @ApiResponse({ status: 200, description: 'Timer stopped; entry finalised' })
   @ApiResponse({ status: 404, description: 'Entry not found or not owned' })
-  stop(
-    @CurrentUser() user: JwtUser,
-    @Param('id') id: string,
-  ) {
+  stop(@CurrentUser() user: JwtUser, @Param('id') id: string) {
     return this.timeEntryService.stop(user.id, id);
   }
 
@@ -88,10 +76,7 @@ export class TimeEntryController {
   @ApiOperation({ summary: 'Create a manual time entry' })
   @ApiResponse({ status: 201, description: 'Entry created' })
   @ApiResponse({ status: 400, description: 'Validation error' })
-  manual(
-    @CurrentUser() user: JwtUser,
-    @Body() dto: ManualEntryDto,
-  ) {
+  manual(@CurrentUser() user: JwtUser, @Body() dto: ManualEntryDto) {
     return this.timeEntryService.createManual(user.id, dto);
   }
 
@@ -99,10 +84,7 @@ export class TimeEntryController {
   @ApiOperation({ summary: 'Delete a time entry' })
   @ApiResponse({ status: 200, description: 'Entry deleted' })
   @ApiResponse({ status: 404, description: 'Entry not found or not owned' })
-  delete(
-    @CurrentUser() user: JwtUser,
-    @Param('id') id: string,
-  ) {
+  delete(@CurrentUser() user: JwtUser, @Param('id') id: string) {
     return this.timeEntryService.delete(user.id, id);
   }
 }

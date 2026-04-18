@@ -45,9 +45,7 @@ export class TimeEntryService {
         startedAt: now,
       },
     });
-    this.logger.log(
-      `time-entry.start id=${created.id} projectId=${projectId} userId=${userId}`,
-    );
+    this.logger.log(`time-entry.start id=${created.id} projectId=${projectId} userId=${userId}`);
     return this.serialize(created, userId);
   }
 
@@ -73,9 +71,7 @@ export class TimeEntryService {
       where: { id: entryId },
       data: { endedAt, durationSec },
     });
-    this.logger.log(
-      `time-entry.stop id=${entryId} durationSec=${durationSec} userId=${userId}`,
-    );
+    this.logger.log(`time-entry.stop id=${entryId} durationSec=${durationSec} userId=${userId}`);
     return this.serialize(updated, userId);
   }
 
@@ -124,10 +120,7 @@ export class TimeEntryService {
     return entries.map((e) => this.serialize(e, userId));
   }
 
-  async createManual(
-    userId: string,
-    dto: ManualEntryDto,
-  ): Promise<TimeEntryResponse> {
+  async createManual(userId: string, dto: ManualEntryDto): Promise<TimeEntryResponse> {
     await this.assertProjectOwnership(userId, dto.projectId);
 
     const startedAt = new Date(dto.startedAt);
@@ -135,9 +128,7 @@ export class TimeEntryService {
     if (startedAt.getTime() >= endedAt.getTime()) {
       throw new BadRequestException('startedAt must be before endedAt');
     }
-    const durationSec = Math.floor(
-      (endedAt.getTime() - startedAt.getTime()) / 1000,
-    );
+    const durationSec = Math.floor((endedAt.getTime() - startedAt.getTime()) / 1000);
     const created = await this.prisma.timeEntry.create({
       data: {
         projectId: dto.projectId,
@@ -189,23 +180,15 @@ export class TimeEntryService {
           where: { id: e.id },
           data: {
             endedAt: now,
-            durationSec: Math.max(
-              0,
-              Math.floor((now.getTime() - e.startedAt.getTime()) / 1000),
-            ),
+            durationSec: Math.max(0, Math.floor((now.getTime() - e.startedAt.getTime()) / 1000)),
           },
         }),
       ),
     );
-    this.logger.log(
-      `time-entry.auto-closed count=${open.length} userId=${userId}`,
-    );
+    this.logger.log(`time-entry.auto-closed count=${open.length} userId=${userId}`);
   }
 
-  private async assertProjectOwnership(
-    userId: string,
-    projectId: string,
-  ): Promise<void> {
+  private async assertProjectOwnership(userId: string, projectId: string): Promise<void> {
     const project = await this.prisma.project.findUnique({
       where: { id: projectId },
       select: { id: true, userId: true },

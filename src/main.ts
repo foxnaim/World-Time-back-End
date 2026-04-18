@@ -34,12 +34,7 @@ async function bootstrap(): Promise<void> {
     origin: allowedOrigins,
     credentials: true,
     methods: ['GET', 'POST', 'PATCH', 'DELETE'],
-    allowedHeaders: [
-      'Authorization',
-      'Content-Type',
-      'X-Request-Id',
-      'X-Display-Key',
-    ],
+    allowedHeaders: ['Authorization', 'Content-Type', 'X-Request-Id', 'X-Display-Key'],
   });
 
   app.setGlobalPrefix('api');

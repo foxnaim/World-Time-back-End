@@ -12,9 +12,7 @@ import { QrService } from './qr.service';
 
 function makeConfig(secret = 'test-qr-hmac-secret-16chars-minimum'): ConfigService {
   return {
-    get: jest.fn((key: string) =>
-      key === 'QR_HMAC_SECRET' ? secret : undefined,
-    ),
+    get: jest.fn((key: string) => (key === 'QR_HMAC_SECRET' ? secret : undefined)),
   } as unknown as ConfigService;
 }
 
@@ -24,12 +22,18 @@ function makePrisma() {
     rows,
     qRToken: {
       create: jest.fn(async ({ data }: any) => {
-        const row = { id: `tok-${rows.length + 1}`, usedByEmployeeId: null, usedAt: null, createdAt: new Date(), ...data };
+        const row = {
+          id: `tok-${rows.length + 1}`,
+          usedByEmployeeId: null,
+          usedAt: null,
+          createdAt: new Date(),
+          ...data,
+        };
         rows.push(row);
         return row;
       }),
-      findUnique: jest.fn(async ({ where }: any) =>
-        rows.find((r) => r.token === where.token) ?? null,
+      findUnique: jest.fn(
+        async ({ where }: any) => rows.find((r) => r.token === where.token) ?? null,
       ),
       findFirst: jest.fn(),
       updateMany: jest.fn(),
@@ -63,18 +67,14 @@ describe('QrService', () => {
     const [payload] = display.token.split('.');
     const tampered = `${payload}.AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA`;
 
-    await expect(service.verify(tampered)).rejects.toBeInstanceOf(
-      UnauthorizedException,
-    );
+    await expect(service.verify(tampered)).rejects.toBeInstanceOf(UnauthorizedException);
   });
 
   it('rejects a token whose payload has been swapped out', async () => {
     const display = await service.generateForCompany('company-a');
     const [, sig] = display.token.split('.');
     // Forge a new payload with the old signature — signature won't match.
-    const fakePayload = Buffer.from(
-      JSON.stringify({ c: 'other-company', r: 1, n: 'x' }),
-    )
+    const fakePayload = Buffer.from(JSON.stringify({ c: 'other-company', r: 1, n: 'x' }))
       .toString('base64')
       .replace(/\+/g, '-')
       .replace(/\//g, '_')

@@ -50,10 +50,7 @@ export class BillingController {
    * during onboarding edge cases).
    */
   @Get('my/:companyId')
-  async mySubscription(
-    @Param('companyId') companyId: string,
-    @CurrentUser() user: { id: string },
-  ) {
+  async mySubscription(@Param('companyId') companyId: string, @CurrentUser() user: { id: string }) {
     const company = await this.prisma.company.findUnique({
       where: { id: companyId },
       select: { id: true, ownerId: true },
@@ -83,10 +80,7 @@ export class BillingController {
    */
   @Post('checkout')
   @HttpCode(HttpStatus.OK)
-  async checkout(
-    @Body() body: CheckoutBody,
-    @CurrentUser() user: { id: string },
-  ) {
+  async checkout(@Body() body: CheckoutBody, @CurrentUser() user: { id: string }) {
     const companyId = body?.companyId;
     const tier = body?.tier;
     if (!companyId || !tier || !(tier in TIERS)) {
@@ -102,9 +96,7 @@ export class BillingController {
     }
 
     const sessionId = `stub_${companyId}_${tier}_${Date.now()}`;
-    this.logger.log(
-      `checkout stub created session=${sessionId} tier=${tier} company=${companyId}`,
-    );
+    this.logger.log(`checkout stub created session=${sessionId} tier=${tier} company=${companyId}`);
 
     return {
       checkoutUrl: `/billing/stub?session=${sessionId}`,
@@ -126,9 +118,7 @@ export class BillingController {
   @Post('webhook')
   @HttpCode(HttpStatus.OK)
   webhook(@Body() body: unknown) {
-    this.logger.log(
-      `billing webhook received payload=${JSON.stringify(body)?.slice(0, 500)}`,
-    );
+    this.logger.log(`billing webhook received payload=${JSON.stringify(body)?.slice(0, 500)}`);
     return { received: true };
   }
 }

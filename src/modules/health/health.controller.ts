@@ -1,9 +1,5 @@
 import { Controller, Get } from '@nestjs/common';
-import {
-  HealthCheck,
-  HealthCheckResult,
-  HealthCheckService,
-} from '@nestjs/terminus';
+import { HealthCheck, HealthCheckResult, HealthCheckService } from '@nestjs/terminus';
 import { Public } from '../../common/decorators/public.decorator';
 import { PrismaHealthIndicator } from './indicators/prisma.indicator';
 import { RedisHealthIndicator } from './indicators/redis.indicator';
@@ -24,9 +20,7 @@ interface LivenessResponse {
 @Controller()
 export class HealthController {
   private readonly version: string =
-    process.env.APP_VERSION ??
-    process.env.npm_package_version ??
-    '0.0.0';
+    process.env.APP_VERSION ?? process.env.npm_package_version ?? '0.0.0';
 
   constructor(
     private readonly health: HealthCheckService,

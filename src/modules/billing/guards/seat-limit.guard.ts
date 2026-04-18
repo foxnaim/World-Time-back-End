@@ -1,9 +1,4 @@
-import {
-  CanActivate,
-  ExecutionContext,
-  ForbiddenException,
-  Injectable,
-} from '@nestjs/common';
+import { CanActivate, ExecutionContext, ForbiddenException, Injectable } from '@nestjs/common';
 
 import { BillingService } from '../billing.service';
 
@@ -25,13 +20,10 @@ export class SeatLimitGuard implements CanActivate {
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
     const request = context.switchToHttp().getRequest<RouteRequest>();
-    const companyId =
-      request.params?.id ?? request.params?.companyId ?? undefined;
+    const companyId = request.params?.id ?? request.params?.companyId ?? undefined;
 
     if (!companyId) {
-      throw new ForbiddenException(
-        'Company identifier missing from route params',
-      );
+      throw new ForbiddenException('Company identifier missing from route params');
     }
 
     await this.billing.checkSeatAvailable(companyId);

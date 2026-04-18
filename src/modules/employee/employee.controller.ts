@@ -51,10 +51,7 @@ export class EmployeeController {
    * path is matched first by Nest's router.
    */
   @Get('me/:companyId')
-  async getMineInCompany(
-    @Req() req: Request,
-    @Param('companyId') companyId: string,
-  ) {
+  async getMineInCompany(@Req() req: Request, @Param('companyId') companyId: string) {
     const user = this.requireUser(req);
     return this.employeeService.getMyEmployee(user.id, companyId);
   }
@@ -102,10 +99,7 @@ export class EmployeeController {
    * the same company as the target employee.
    */
   @Get(':employeeId')
-  async adminGet(
-    @Req() req: Request,
-    @Param('employeeId') employeeId: string,
-  ) {
+  async adminGet(@Req() req: Request, @Param('employeeId') employeeId: string) {
     const user = this.requireUser(req);
     return this.employeeService.adminGet(employeeId, user.id);
   }

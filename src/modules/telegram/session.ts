@@ -62,9 +62,7 @@ function persist(telegramId: string, snapshot: TelegramSession): void {
   const redis = redisRef;
   if (!redis) return;
   // JSON-serialize with BigInt/undefined safety.
-  const payload = JSON.stringify(snapshot, (_k, v) =>
-    typeof v === 'bigint' ? v.toString() : v,
-  );
+  const payload = JSON.stringify(snapshot, (_k, v) => (typeof v === 'bigint' ? v.toString() : v));
   void redis.set(KEY_PREFIX + telegramId, payload, TTL_SEC).catch((err) => {
     logger.warn(`redis set session failed: ${(err as Error).message ?? err}`);
   });
@@ -93,17 +91,11 @@ function hydrate(telegramId: string): void {
         }
       } catch (err) {
         logger.warn(
-          `redis session parse failed for ${telegramId}: ${
-            (err as Error).message ?? err
-          }`,
+          `redis session parse failed for ${telegramId}: ${(err as Error).message ?? err}`,
         );
       }
     })
-    .catch((err) =>
-      logger.warn(
-        `redis get session failed: ${(err as Error).message ?? err}`,
-      ),
-    );
+    .catch((err) => logger.warn(`redis get session failed: ${(err as Error).message ?? err}`));
 }
 
 function wrap(telegramId: string, target: TelegramSession): TelegramSession {
@@ -121,9 +113,7 @@ function wrap(telegramId: string, target: TelegramSession): TelegramSession {
   });
 }
 
-export function getSession(
-  telegramId: bigint | string | number,
-): TelegramSession {
+export function getSession(telegramId: bigint | string | number): TelegramSession {
   const key = telegramId.toString();
   let s = store.get(key);
   if (!s) {
@@ -144,9 +134,7 @@ export function clearSession(telegramId: bigint | string | number): void {
   const redis = redisRef;
   if (redis) {
     void redis.del(keyOf(telegramId)).catch((err) => {
-      logger.warn(
-        `redis del session failed: ${(err as Error).message ?? err}`,
-      );
+      logger.warn(`redis del session failed: ${(err as Error).message ?? err}`);
     });
   }
 }

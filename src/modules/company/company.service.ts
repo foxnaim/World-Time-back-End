@@ -46,8 +46,7 @@ export class CompanyService {
     let attempt = 0;
     // eslint-disable-next-line no-constant-condition
     while (true) {
-      const candidate =
-        attempt === 0 ? baseSlug : `${baseSlug}-${createId().slice(0, 6)}`;
+      const candidate = attempt === 0 ? baseSlug : `${baseSlug}-${createId().slice(0, 6)}`;
 
       try {
         const company = await this.prisma.$transaction(async (tx) => {
@@ -137,13 +136,8 @@ export class CompanyService {
       where: { userId, companyId },
     });
     if (!membership) throw new NotFoundException('Company not found');
-    if (
-      membership.role !== EmployeeRole.OWNER &&
-      membership.role !== EmployeeRole.MANAGER
-    ) {
-      throw new ForbiddenException(
-        'Only OWNER or MANAGER can update the company',
-      );
+    if (membership.role !== EmployeeRole.OWNER && membership.role !== EmployeeRole.MANAGER) {
+      throw new ForbiddenException('Only OWNER or MANAGER can update the company');
     }
 
     return this.prisma.company.update({
@@ -156,22 +150,15 @@ export class CompanyService {
    * Issue a Telegram deep-link invite token for a future employee.
    * Returns the bot deep-link plus the raw token and expiry.
    */
-  async inviteEmployee(
-    userId: string,
-    companyId: string,
-    dto: InviteEmployeeDto,
-  ) {
+  async inviteEmployee(userId: string, companyId: string, dto: InviteEmployeeDto) {
     const membership = await this.prisma.employee.findFirst({
       where: { userId, companyId },
     });
     if (
       !membership ||
-      (membership.role !== EmployeeRole.OWNER &&
-        membership.role !== EmployeeRole.MANAGER)
+      (membership.role !== EmployeeRole.OWNER && membership.role !== EmployeeRole.MANAGER)
     ) {
-      throw new ForbiddenException(
-        'Only OWNER or MANAGER can invite employees',
-      );
+      throw new ForbiddenException('Only OWNER or MANAGER can invite employees');
     }
 
     const role = (dto.role ?? EmployeeRole.STAFF) as EmployeeRole;
@@ -180,9 +167,7 @@ export class CompanyService {
       (role === EmployeeRole.OWNER || role === EmployeeRole.MANAGER) &&
       membership.role !== EmployeeRole.OWNER
     ) {
-      throw new ForbiddenException(
-        'Only OWNER can invite OWNER or MANAGER roles',
-      );
+      throw new ForbiddenException('Only OWNER can invite OWNER or MANAGER roles');
     }
 
     const { token, expiresAt } = await this.inviteTokens.issue({
@@ -240,13 +225,8 @@ export class CompanyService {
       where: { userId: actorUserId, companyId },
     });
     if (!actor) throw new NotFoundException('Company not found');
-    if (
-      actor.role !== EmployeeRole.OWNER &&
-      actor.role !== EmployeeRole.MANAGER
-    ) {
-      throw new ForbiddenException(
-        'Only OWNER or MANAGER can modify employees',
-      );
+    if (actor.role !== EmployeeRole.OWNER && actor.role !== EmployeeRole.MANAGER) {
+      throw new ForbiddenException('Only OWNER or MANAGER can modify employees');
     }
     if (patch.role && actor.role !== EmployeeRole.OWNER) {
       throw new ForbiddenException('Only OWNER can change an employee role');
@@ -258,18 +238,12 @@ export class CompanyService {
     if (!target) throw new NotFoundException('Employee not found');
 
     // Prevent demoting the sole OWNER.
-    if (
-      target.role === EmployeeRole.OWNER &&
-      patch.role &&
-      patch.role !== EmployeeRole.OWNER
-    ) {
+    if (target.role === EmployeeRole.OWNER && patch.role && patch.role !== EmployeeRole.OWNER) {
       const ownerCount = await this.prisma.employee.count({
         where: { companyId, role: EmployeeRole.OWNER },
       });
       if (ownerCount <= 1) {
-        throw new ConflictException(
-          'Cannot demote the last OWNER of the company',
-        );
+        throw new ConflictException('Cannot demote the last OWNER of the company');
       }
     }
 
@@ -288,11 +262,7 @@ export class CompanyService {
   /**
    * Soft-delete an employee by flipping status to INACTIVE. OWNER only.
    */
-  async deactivateEmployee(
-    actorUserId: string,
-    companyId: string,
-    employeeId: string,
-  ) {
+  async deactivateEmployee(actorUserId: string, companyId: string, employeeId: string) {
     const actor = await this.prisma.employee.findFirst({
       where: { userId: actorUserId, companyId },
     });
@@ -315,9 +285,7 @@ export class CompanyService {
         },
       });
       if (ownerCount <= 1) {
-        throw new ConflictException(
-          'Cannot deactivate the last active OWNER of the company',
-        );
+        throw new ConflictException('Cannot deactivate the last active OWNER of the company');
       }
     }
 

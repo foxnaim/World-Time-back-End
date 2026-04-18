@@ -18,17 +18,12 @@ export class HttpExceptionFilter implements ExceptionFilter {
     const request = ctx.getRequest<Request>();
 
     const statusCode =
-      exception instanceof HttpException
-        ? exception.getStatus()
-        : HttpStatus.INTERNAL_SERVER_ERROR;
+      exception instanceof HttpException ? exception.getStatus() : HttpStatus.INTERNAL_SERVER_ERROR;
 
     let message: unknown = 'Internal server error';
     if (exception instanceof HttpException) {
       const res = exception.getResponse();
-      message =
-        typeof res === 'string'
-          ? res
-          : ((res as { message?: unknown }).message ?? res);
+      message = typeof res === 'string' ? res : ((res as { message?: unknown }).message ?? res);
     } else if (exception instanceof Error) {
       message = exception.message;
     }

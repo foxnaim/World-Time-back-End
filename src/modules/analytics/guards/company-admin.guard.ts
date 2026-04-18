@@ -41,9 +41,7 @@ export class CompanyAdminGuard implements CanActivate {
     });
 
     if (!membership) {
-      throw new ForbiddenException(
-        'Caller is not an OWNER or MANAGER of this company',
-      );
+      throw new ForbiddenException('Caller is not an OWNER or MANAGER of this company');
     }
 
     return true;

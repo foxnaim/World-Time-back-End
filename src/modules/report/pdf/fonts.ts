@@ -61,9 +61,7 @@ export function registerFonts(doc: PDFKit.PDFDocument): void {
       }
     } catch (err) {
       logger.warn(
-        `Failed to load font "${reg.filename}" from ${basePath}: ${
-          (err as Error).message
-        }`,
+        `Failed to load font "${reg.filename}" from ${basePath}: ${(err as Error).message}`,
       );
     }
 
@@ -79,10 +77,6 @@ export function registerFonts(doc: PDFKit.PDFDocument): void {
 }
 
 /** Convenience helper — sets font + size in one call. */
-export function useFont(
-  doc: PDFKit.PDFDocument,
-  key: FontKey,
-  size: number,
-): PDFKit.PDFDocument {
+export function useFont(doc: PDFKit.PDFDocument, key: FontKey, size: number): PDFKit.PDFDocument {
   return doc.font(key).fontSize(size);
 }

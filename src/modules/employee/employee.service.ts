@@ -1,9 +1,4 @@
-import {
-  ForbiddenException,
-  Injectable,
-  Logger,
-  NotFoundException,
-} from '@nestjs/common';
+import { ForbiddenException, Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { CheckInType, EmployeeRole } from '@prisma/client';
 import { startOfDay, startOfMonth } from 'date-fns';
 
@@ -50,10 +45,7 @@ export class EmployeeService {
    * Return the user's Employee record in the given company, enriched with
    * derived stats (todayCheckedIn, currentMonthWorkedHours, lateCountThisMonth).
    */
-  async getMyEmployee(
-    userId: string,
-    companyId: string,
-  ): Promise<EmployeeWithStats> {
+  async getMyEmployee(userId: string, companyId: string): Promise<EmployeeWithStats> {
     const employee = await this.prisma.employee.findUnique({
       where: { userId_companyId: { userId, companyId } },
       include: {
@@ -73,10 +65,7 @@ export class EmployeeService {
       throw new NotFoundException('Employee record not found for this company');
     }
 
-    const stats = await this.computeStats(
-      employee.id,
-      employee.company.workStartHour,
-    );
+    const stats = await this.computeStats(employee.id, employee.company.workStartHour);
 
     return {
       ...this.serializeEmployee(employee),
@@ -87,10 +76,7 @@ export class EmployeeService {
   /**
    * Admin (OWNER/MANAGER) read of another employee in the same company.
    */
-  async adminGet(
-    employeeId: string,
-    viewerUserId: string,
-  ): Promise<EmployeeWithStats> {
+  async adminGet(employeeId: string, viewerUserId: string): Promise<EmployeeWithStats> {
     const employee = await this.prisma.employee.findUnique({
       where: { id: employeeId },
       include: {
@@ -120,19 +106,11 @@ export class EmployeeService {
       select: { role: true },
     });
 
-    if (
-      !viewer ||
-      (viewer.role !== EmployeeRole.OWNER && viewer.role !== EmployeeRole.MANAGER)
-    ) {
-      throw new ForbiddenException(
-        'Only OWNER or MANAGER can view other employees',
-      );
+    if (!viewer || (viewer.role !== EmployeeRole.OWNER && viewer.role !== EmployeeRole.MANAGER)) {
+      throw new ForbiddenException('Only OWNER or MANAGER can view other employees');
     }
 
-    const stats = await this.computeStats(
-      employee.id,
-      employee.company.workStartHour,
-    );
+    const stats = await this.computeStats(employee.id, employee.company.workStartHour);
 
     return {
       ...this.serializeEmployee(employee),
@@ -270,8 +248,7 @@ export class EmployeeService {
     }
 
     // Round to 0.01h for display friendliness.
-    const currentMonthWorkedHours =
-      Math.round((workedMs / (1000 * 60 * 60)) * 100) / 100;
+    const currentMonthWorkedHours = Math.round((workedMs / (1000 * 60 * 60)) * 100) / 100;
 
     return {
       todayCheckedIn: Boolean(todayIn),

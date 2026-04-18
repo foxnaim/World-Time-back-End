@@ -27,8 +27,6 @@ export class AuthHandler {
     }
 
     const code = this.auth.issueBotOneTimeCode(user.telegramId);
-    await ctx.reply(
-      `Введите этот код на сайте: ${code}\nКод действует 2 минуты.`,
-    );
+    await ctx.reply(`Введите этот код на сайте: ${code}\nКод действует 2 минуты.`);
   }
 }

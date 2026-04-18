@@ -14,15 +14,12 @@ export class BotService {
     text: string,
     options?: ExtraReplyMessage,
   ): Promise<boolean> {
-    const chatId =
-      typeof telegramId === 'bigint' ? Number(telegramId) : Number(telegramId);
+    const chatId = typeof telegramId === 'bigint' ? Number(telegramId) : Number(telegramId);
     try {
       await this.bot.telegram.sendMessage(chatId, text, options);
       return true;
     } catch (err) {
-      this.logger.warn(
-        `notifyUser failed for chat ${chatId}: ${(err as Error).message}`,
-      );
+      this.logger.warn(`notifyUser failed for chat ${chatId}: ${(err as Error).message}`);
       return false;
     }
   }

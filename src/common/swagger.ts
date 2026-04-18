@@ -50,14 +50,9 @@ export function setupSwagger(app: INestApplication): void {
 
   const builder = new DocumentBuilder()
     .setTitle('Work Tact API')
-    .setDescription(
-      'Work Tact API — Telegram+QR time tracking for B2B offices and B2C freelancers',
-    )
+    .setDescription('Work Tact API — Telegram+QR time tracking for B2B offices and B2C freelancers')
     .setVersion(version)
-    .addBearerAuth(
-      { type: 'http', scheme: 'bearer', bearerFormat: 'JWT' },
-      'jwt',
-    )
+    .addBearerAuth({ type: 'http', scheme: 'bearer', bearerFormat: 'JWT' }, 'jwt')
     .addServer(`http://localhost:${port}`, 'local');
 
   for (const tag of MODULE_TAGS) {

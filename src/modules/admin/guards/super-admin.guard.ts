@@ -51,18 +51,13 @@ export class SuperAdminGuard implements CanActivate {
 
     const ids = parseSuperAdminIds(process.env.SUPER_ADMIN_TELEGRAM_IDS);
     if (ids.size === 0) {
-      this.logger.warn(
-        'SUPER_ADMIN_TELEGRAM_IDS is empty — super-admin routes are locked down.',
-      );
+      this.logger.warn('SUPER_ADMIN_TELEGRAM_IDS is empty — super-admin routes are locked down.');
       throw new ForbiddenException('Super-admin access is not configured');
     }
 
     let callerId: bigint;
     try {
-      callerId =
-        typeof user.telegramId === 'bigint'
-          ? user.telegramId
-          : BigInt(user.telegramId);
+      callerId = typeof user.telegramId === 'bigint' ? user.telegramId : BigInt(user.telegramId);
     } catch {
       throw new ForbiddenException('Invalid caller identity');
     }

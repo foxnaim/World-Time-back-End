@@ -59,10 +59,7 @@ export interface SanitizeStringOptions {
  * fields that have a strict format (emails, tokens, IDs) — validate those
  * with zod instead.
  */
-export function sanitizeString(
-  input: string,
-  options: SanitizeStringOptions = {},
-): string {
+export function sanitizeString(input: string, options: SanitizeStringOptions = {}): string {
   const {
     maxLength = DEFAULT_MAX_STRING_LENGTH,
     collapseWhitespace: doCollapse = false,
@@ -79,10 +76,7 @@ export function sanitizeString(
  * Sanitizer for a single-line field — names, titles, labels. Always
  * collapses whitespace and uses a tighter default length limit.
  */
-export function sanitizeLine(
-  input: string,
-  maxLength: number = DEFAULT_MAX_LINE_LENGTH,
-): string {
+export function sanitizeLine(input: string, maxLength: number = DEFAULT_MAX_LINE_LENGTH): string {
   return sanitizeString(input, { maxLength, collapseWhitespace: true });
 }
 

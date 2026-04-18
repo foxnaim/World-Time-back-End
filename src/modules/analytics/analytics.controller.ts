@@ -11,13 +11,7 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
-import {
-  ApiBearerAuth,
-  ApiOperation,
-  ApiQuery,
-  ApiResponse,
-  ApiTags,
-} from '@nestjs/swagger';
+import { ApiBearerAuth, ApiOperation, ApiQuery, ApiResponse, ApiTags } from '@nestjs/swagger';
 import type { Request } from 'express';
 
 import { AnalyticsService } from './analytics.service';
@@ -59,10 +53,7 @@ export class AnalyticsController {
   @ApiQuery({ name: 'month', required: true, description: 'YYYY-MM' })
   @ApiResponse({ status: 200, description: 'Late-arrival stats returned' })
   @ApiResponse({ status: 403, description: 'Not a company admin' })
-  async companyLateStats(
-    @Param('companyId') companyId: string,
-    @Query('month') month: string,
-  ) {
+  async companyLateStats(@Param('companyId') companyId: string, @Query('month') month: string) {
     return this.analytics.getCompanyLateStats(companyId, assertMonth(month));
   }
 
@@ -78,11 +69,7 @@ export class AnalyticsController {
     @Query('month') month: string,
     @Query('limit', new DefaultValuePipe(10), ParseIntPipe) limit: number,
   ) {
-    return this.analytics.getCompanyRanking(
-      companyId,
-      assertMonth(month),
-      limit,
-    );
+    return this.analytics.getCompanyRanking(companyId, assertMonth(month), limit);
   }
 
   @Get('company/:companyId/overtime')
@@ -91,10 +78,7 @@ export class AnalyticsController {
   @ApiQuery({ name: 'month', required: true, description: 'YYYY-MM' })
   @ApiResponse({ status: 200, description: 'Overtime stats returned' })
   @ApiResponse({ status: 403, description: 'Not a company admin' })
-  async companyOvertime(
-    @Param('companyId') companyId: string,
-    @Query('month') month: string,
-  ) {
+  async companyOvertime(@Param('companyId') companyId: string, @Query('month') month: string) {
     return this.analytics.getCompanyOvertime(companyId, assertMonth(month));
   }
 
@@ -104,10 +88,7 @@ export class AnalyticsController {
   @ApiQuery({ name: 'month', required: true, description: 'YYYY-MM' })
   @ApiResponse({ status: 200, description: 'Company summary returned' })
   @ApiResponse({ status: 403, description: 'Not a company admin' })
-  async companySummary(
-    @Param('companyId') companyId: string,
-    @Query('month') month: string,
-  ) {
+  async companySummary(@Param('companyId') companyId: string, @Query('month') month: string) {
     return this.analytics.getCompanySummary(companyId, assertMonth(month));
   }
 
@@ -119,10 +100,7 @@ export class AnalyticsController {
   @ApiOperation({ summary: 'Real effective hourly rate for the caller, per month' })
   @ApiQuery({ name: 'month', required: true, description: 'YYYY-MM' })
   @ApiResponse({ status: 200, description: 'Rate returned' })
-  async userRealHourlyRate(
-    @Req() req: Request,
-    @Query('month') month: string,
-  ) {
+  async userRealHourlyRate(@Req() req: Request, @Query('month') month: string) {
     const { id } = requireUser(req);
     return this.analytics.getUserRealHourlyRate(id, assertMonth(month));
   }
