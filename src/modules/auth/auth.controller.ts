@@ -66,13 +66,13 @@ export class AuthController {
   async botLogin(@Body() dto: BotLoginDto) {
     const telegramId = this.authService.consumeBotOneTimeCode(dto.oneTimeCode);
     if (!telegramId) {
-      this.logger.warn(`bot-login invalid OTC userId=${dto.userId}`);
+      this.logger.warn('bot-login invalid OTC');
       throw new UnauthorizedException('Invalid or expired one-time code');
     }
     const user = await this.authService.getUserByTelegramId(telegramId);
-    if (!user || user.id !== dto.userId) {
-      this.logger.warn(`bot-login user mismatch telegramId=${telegramId}`);
-      throw new UnauthorizedException('User mismatch');
+    if (!user) {
+      this.logger.warn(`bot-login user not found telegramId=${telegramId}`);
+      throw new UnauthorizedException('User not found');
     }
     this.logger.log(`bot-login success telegramId=${telegramId}`);
     return this.authService.issueTokens(user.id);
