@@ -10,6 +10,11 @@ export class JwtAuthGuard extends AuthGuard('jwt') {
   }
 
   canActivate(context: ExecutionContext) {
+    // Only apply to HTTP — Telegraf and other RPC contexts have no
+    // Authorization header to parse and would fail in super.canActivate.
+    if (context.getType() !== 'http') {
+      return true;
+    }
     const isPublic = this.reflector.getAllAndOverride<boolean>(IS_PUBLIC_KEY, [
       context.getHandler(),
       context.getClass(),

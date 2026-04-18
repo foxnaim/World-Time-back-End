@@ -18,6 +18,10 @@ export class LoggingInterceptor implements NestInterceptor {
   private readonly logger = new Logger(LoggingInterceptor.name);
 
   intercept(context: ExecutionContext, next: CallHandler): Observable<unknown> {
+    // Skip non-HTTP contexts (Telegraf, WS) — no Express request to read.
+    if (context.getType() !== 'http') {
+      return next.handle();
+    }
     const request = context.switchToHttp().getRequest<Request>();
     const method = request?.method;
     const url = request?.url;

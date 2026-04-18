@@ -17,7 +17,10 @@ export class TelegramErrorsFilter implements ExceptionFilter {
 
     const msg =
       exception instanceof Error ? exception.message : String(exception);
-    this.logger.error(`Handler error: ${msg}`);
+    this.logger.error(
+      `Handler error: ${msg}`,
+      exception instanceof Error ? exception.stack : undefined,
+    );
 
     try {
       await ctx.reply('Что-то пошло не так, попробуй позже.');

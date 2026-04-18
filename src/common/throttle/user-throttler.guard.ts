@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { ExecutionContext, Injectable } from '@nestjs/common';
 import { ThrottlerGuard } from '@nestjs/throttler';
 import type { Request } from 'express';
 
@@ -16,6 +16,15 @@ import type { Request } from 'express';
  */
 @Injectable()
 export class UserThrottlerGuard extends ThrottlerGuard {
+  async canActivate(context: ExecutionContext): Promise<boolean> {
+    // Rate limiting is an HTTP concern; Telegraf/RPC contexts have no
+    // Express req/res and would crash on `res.header(...)`.
+    if (context.getType() !== 'http') {
+      return true;
+    }
+    return super.canActivate(context);
+  }
+
   protected async getTracker(req: Request): Promise<string> {
     const user = (req as Request & { user?: { id?: string } }).user;
     const id = user?.id ?? req.ip;

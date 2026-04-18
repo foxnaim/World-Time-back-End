@@ -1,8 +1,9 @@
-import { Module, OnModuleInit, Optional } from '@nestjs/common';
+import { Module, OnModuleInit, Optional, Logger } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
-import { InjectBot, TelegrafModule } from 'nestjs-telegraf';
-import { Telegraf } from 'telegraf';
+import { TelegrafModule } from 'nestjs-telegraf';
+import type { Context, MiddlewareFn } from 'telegraf';
 import { PrismaModule } from '@/common/prisma.module';
+import { PrismaService } from '@/common/prisma.service';
 import { RedisService } from '@/common/redis/redis.service';
 import { AuthModule } from '../auth/auth.module';
 import { CompanyModule } from '../company/company.module';
@@ -19,15 +20,62 @@ import { UserMiddleware } from './middleware/user.middleware';
 import { TelegramErrorsFilter } from './handlers/errors.filter';
 import { registerSessionRedis } from './session';
 
+/**
+ * Telegraf bot module.
+ *
+ * Key wiring note: the user-resolution middleware is registered INSIDE
+ * forRootAsync.useFactory via `middlewares:` option. That way nestjs-telegraf
+ * attaches it BEFORE `bot.launch()` runs. The previous approach of
+ * `bot.use(...)` in onModuleInit registered the middleware AFTER launch,
+ * so the first updates arrived without ctx.state.user populated.
+ */
 @Module({
   imports: [
     TelegrafModule.forRootAsync({
-      imports: [ConfigModule],
-      inject: [ConfigService],
-      useFactory: (config: ConfigService) => ({
-        token: config.get<string>('TELEGRAM_BOT_TOKEN') ?? '',
-        launchOptions: config.get<string>('TELEGRAM_BOT_TOKEN') ? undefined : false,
-      }),
+      imports: [ConfigModule, PrismaModule],
+      inject: [ConfigService, PrismaService],
+      useFactory: (config: ConfigService, prisma: PrismaService) => {
+        const logger = new Logger('TelegrafUserMiddleware');
+        const token = config.get<string>('TELEGRAM_BOT_TOKEN') ?? '';
+
+        const userMiddleware: MiddlewareFn<Context> = async (ctx, next) => {
+          const from = ctx.from;
+          if (!from) return next();
+          try {
+            const telegramId = BigInt(from.id);
+            let user = await prisma.user.findUnique({
+              where: { telegramId },
+              include: { employees: true },
+            });
+            if (!user) {
+              user = await prisma.user.create({
+                data: {
+                  telegramId,
+                  firstName: from.first_name || from.username || 'Telegram user',
+                  lastName: from.last_name ?? null,
+                  username: from.username ?? null,
+                },
+                include: { employees: true },
+              });
+            }
+            (ctx.state as { user?: unknown }).user = user;
+          } catch (err) {
+            logger.error(
+              `resolve user failed: ${(err as Error).message}`,
+              (err as Error).stack,
+            );
+          }
+          return next();
+        };
+
+        return {
+          token,
+          middlewares: [userMiddleware],
+          // When token is missing, disable launch entirely so the app can
+          // still boot (useful for tests / local dev without a bot).
+          launchOptions: token ? {} : false,
+        };
+      },
     }),
     PrismaModule,
     AuthModule,
@@ -49,15 +97,9 @@ import { registerSessionRedis } from './session';
   exports: [BotService],
 })
 export class TelegramModule implements OnModuleInit {
-  constructor(
-    @InjectBot() private readonly bot: Telegraf,
-    private readonly userMiddleware: UserMiddleware,
-    @Optional() private readonly redis?: RedisService,
-  ) {}
+  constructor(@Optional() private readonly redis?: RedisService) {}
 
   onModuleInit(): void {
     registerSessionRedis(this.redis ?? null);
-    // Attach user resolution middleware now that DI has instantiated it.
-    this.bot.use(this.userMiddleware.use());
   }
 }

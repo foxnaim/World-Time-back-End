@@ -9,9 +9,9 @@ import { getSession } from '../session';
 import { TelegramErrorsFilter } from './errors.filter';
 
 function resolveRole(user: any): 'b2b' | 'b2c' | 'both' {
-  const hasCompany = Boolean(user?.companyId || user?.employee);
-  const hasClientProfile = Boolean(user?.clientProfile || user?.isFreelancer);
-  if (hasCompany && hasClientProfile) return 'both';
+  const hasCompany = Array.isArray(user?.employees) && user.employees.length > 0;
+  const hasProjects = Array.isArray(user?.projects) && user.projects.length > 0;
+  if (hasCompany && hasProjects) return 'both';
   if (hasCompany) return 'b2b';
   return 'b2c';
 }
@@ -33,7 +33,14 @@ export class StartHandler {
     const payload = (ctx as any).startPayload as string | undefined;
     const role = resolveRole(user);
 
+    this.logger.log(
+      `/start received: telegramId=${ctx.from?.id}, userResolved=${Boolean(user)}, payload=${payload ?? '(none)'}`,
+    );
+
     if (!user) {
+      this.logger.warn(
+        `/start without resolved user; telegramId=${ctx.from?.id}. Check UserMiddleware + Prisma.`,
+      );
       await ctx.reply(
         'Не удалось инициализировать аккаунт. Попробуй /start ещё раз.',
       );
@@ -95,11 +102,20 @@ export class StartHandler {
       return;
     }
 
-    await ctx.reply(
-      'Привет! Это **Tact** — ритм рабочего дня.\n' +
-        'Нажми «Войти», чтобы подключить аккаунт на сайте, ' +
-        'или используй /auth.',
-      mainMenu(role),
-    );
+    try {
+      await ctx.reply(
+        'Привет! Это Work Tact — ритм рабочего дня.\n' +
+          'Нажми «Войти», чтобы подключить аккаунт на сайте, ' +
+          'или используй /auth.',
+        mainMenu(role),
+      );
+      this.logger.log(`/start: welcome sent to telegramId=${ctx.from?.id}`);
+    } catch (err) {
+      this.logger.error(
+        `/start reply failed: ${(err as Error).message}`,
+        (err as Error).stack,
+      );
+      throw err;
+    }
   }
 }
