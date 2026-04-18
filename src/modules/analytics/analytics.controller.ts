@@ -92,6 +92,16 @@ export class AnalyticsController {
     return this.analytics.getCompanySummary(companyId, assertMonth(month));
   }
 
+  @Get('company/:companyId/payouts')
+  @UseGuards(CompanyAdminGuard)
+  @ApiOperation({ summary: 'Monthly per-employee payout breakdown (OWNER/MANAGER)' })
+  @ApiQuery({ name: 'month', required: true, description: 'YYYY-MM' })
+  @ApiResponse({ status: 200, description: 'Payouts returned' })
+  @ApiResponse({ status: 403, description: 'Not a company admin' })
+  async companyPayouts(@Param('companyId') companyId: string, @Query('month') month: string) {
+    return this.analytics.getCompanyPayouts(companyId, assertMonth(month));
+  }
+
   // ---------------------------------------------------------------------------
   // B2C (current user only)
   // ---------------------------------------------------------------------------

@@ -29,6 +29,15 @@ interface CompanySummary {
   punctualityScore: number;
 }
 
+interface CompanyPayoutRow {
+  employeeId: string;
+  name: string;
+  baseSalary: number;
+  overtimePay: number;
+  deductions: number;
+  total: number;
+}
+
 interface ProjectBreakdownRow {
   projectId: string;
   name: string;
@@ -218,6 +227,59 @@ export class AnalyticsService {
       totalOvertimeHours,
       punctualityScore: punctualityScore(avgLateMinutes),
     };
+  }
+
+  /**
+   * Per-employee monthly payout breakdown. Uses the same late/overtime inputs
+   * as the other company reports but joins employee `monthlySalary` for the
+   * base and applies a simple deduction rule (late minutes → pro-rated salary
+   * loss at 160 hours/month). Overtime pay uses a 1.5× multiplier on the
+   * derived hourly rate.
+   */
+  async getCompanyPayouts(companyId: string, month: string): Promise<CompanyPayoutRow[]> {
+    const [lateStats, overtime, employees] = await Promise.all([
+      this.getCompanyLateStats(companyId, month),
+      this.getCompanyOvertime(companyId, month),
+      this.prisma.employee.findMany({
+        where: { companyId, status: 'ACTIVE' },
+        select: {
+          id: true,
+          monthlySalary: true,
+          hourlyRate: true,
+          user: { select: { firstName: true, lastName: true } },
+        },
+      }),
+    ]);
+
+    const lateById = new Map(lateStats.map((l) => [l.employeeId, l]));
+    const overtimeById = new Map(overtime.map((o) => [o.employeeId, o]));
+
+    return employees.map((emp) => {
+      const base = emp.monthlySalary ? Number(emp.monthlySalary) : 0;
+      const late = lateById.get(emp.id);
+      const ot = overtimeById.get(emp.id);
+      const totalLateMinutes = late?.totalLateMinutes ?? 0;
+      const overtimeHours = ot?.overtimeHours ?? 0;
+
+      // Derived hourly rate: prefer explicit hourlyRate, otherwise amortise
+      // monthly salary over a nominal 160h/month.
+      const explicitHourly = emp.hourlyRate ? Number(emp.hourlyRate) : 0;
+      const derivedHourly = explicitHourly > 0 ? explicitHourly : base > 0 ? base / 160 : 0;
+
+      const overtimePay = Math.round(overtimeHours * derivedHourly * 1.5 * 100) / 100;
+      const deductions =
+        base > 0 ? Math.round((totalLateMinutes / 60) * (base / 160) * 100) / 100 : 0;
+      const total = Math.round((base + overtimePay - deductions) * 100) / 100;
+
+      return {
+        employeeId: emp.id,
+        name: this.fullName(emp.user.firstName, emp.user.lastName),
+        baseSalary: base,
+        overtimePay,
+        deductions,
+        total,
+      };
+    });
   }
 
   // ---------------------------------------------------------------------------
