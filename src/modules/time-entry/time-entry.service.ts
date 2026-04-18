@@ -6,8 +6,8 @@ import {
   Logger,
   NotFoundException,
 } from '@nestjs/common';
-import type { Prisma, TimeEntry } from '@worktime/database';
-import type { TimeEntryResponse } from '@worktime/types';
+import type { Prisma, TimeEntry } from '@tact/database';
+import type { TimeEntryResponse } from '@tact/types';
 
 import { PrismaService } from '@/common/prisma.service';
 

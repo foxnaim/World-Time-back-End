@@ -13,7 +13,7 @@ import { nanoid } from 'nanoid';
 import { startOfDay } from 'date-fns';
 
 import { PrismaService } from '@/common/prisma.service';
-import type { QRTokenDisplay } from '@worktime/types';
+import type { QRTokenDisplay } from '@tact/types';
 import { SseHub } from './sse.helper';
 
 /** Rotation cadence, in seconds. Drives both the cron and the live SSE stream. */

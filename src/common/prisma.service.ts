@@ -5,7 +5,7 @@ import {
   OnModuleInit,
   INestApplication,
 } from '@nestjs/common';
-import { PrismaClient } from '@worktime/database';
+import { PrismaClient } from '@tact/database';
 
 @Injectable()
 export class PrismaService

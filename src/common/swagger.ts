@@ -49,9 +49,9 @@ export function setupSwagger(app: INestApplication): void {
   const version = pkg.version ?? '0.0.0';
 
   const builder = new DocumentBuilder()
-    .setTitle('WorkTime API')
+    .setTitle('Tact API')
     .setDescription(
-      'Telegram+QR time tracking — B2B offices and B2C freelancers',
+      'Tact API — Telegram+QR time tracking for B2B offices and B2C freelancers',
     )
     .setVersion(version)
     .addBearerAuth(
@@ -71,7 +71,7 @@ export function setupSwagger(app: INestApplication): void {
   });
 
   SwaggerModule.setup('api/docs', app, document, {
-    customSiteTitle: 'WorkTime API',
+    customSiteTitle: 'Tact API',
     swaggerOptions: {
       persistAuthorization: true,
     },

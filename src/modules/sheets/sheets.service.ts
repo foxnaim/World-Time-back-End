@@ -114,7 +114,7 @@ export class SheetsService {
 
   /**
    * Returns the stored spreadsheet ID for this company, or creates a new
-   * spreadsheet (titled "WorkTime — {companyName}") and persists it to the
+   * spreadsheet (titled "Tact — {companyName}") and persists it to the
    * JSON store. Optionally grants writer permission to a list of user
    * emails via Drive API.
    */
@@ -131,7 +131,7 @@ export class SheetsService {
 
     const createRes = await sheets.spreadsheets.create({
       requestBody: {
-        properties: { title: `WorkTime — ${companyName}` },
+        properties: { title: `Tact — ${companyName}` },
         sheets: [
           { properties: { title: ATTENDANCE_SHEET } },
           { properties: { title: SUMMARY_SHEET } },

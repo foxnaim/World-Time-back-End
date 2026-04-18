@@ -1,6 +1,6 @@
 # syntax=docker/dockerfile:1.7
 #
-# WorkTime API — multi-stage production image for a pnpm + Turborepo monorepo.
+# Tact API — multi-stage production image for a pnpm + Turborepo monorepo.
 #
 # Build context MUST be the monorepo root, e.g.:
 #     docker build -f backend/Dockerfile -t worktime/api .
@@ -64,7 +64,7 @@ ENV NODE_ENV=development
 # 4000 = NestJS HTTP, 9229 = Node inspector for attaching a debugger.
 EXPOSE 4000 9229
 
-CMD ["pnpm","--filter","@worktime/api","dev"]
+CMD ["pnpm","--filter","@tact/api","dev"]
 
 ###############################################################################
 # Stage 2: deps — install the full workspace dependency graph.
@@ -114,16 +114,16 @@ COPY packages/ui/        ./packages/ui/
 
 # 1) Generate the Prisma client against the schema in packages/database.
 # 2) Compile the NestJS application to backend/dist.
-RUN pnpm --filter @worktime/database generate \
+RUN pnpm --filter @tact/database generate \
  && npx --prefix /repo/packages/database prisma generate --schema=/repo/packages/database/prisma/schema.prisma \
- && pnpm --filter @worktime/api build
+ && pnpm --filter @tact/api build
 
 # Prune dev dependencies so only production deps remain in node_modules.
 RUN --mount=type=cache,id=pnpm-store,target=/root/.local/share/pnpm/store \
     pnpm install --prod --ignore-scripts \
-        --filter @worktime/api... \
-        --filter @worktime/database \
-        --filter @worktime/types
+        --filter @tact/api... \
+        --filter @tact/database \
+        --filter @tact/types
 
 ###############################################################################
 # Stage 4: runtime — minimal image that runs the compiled app.
@@ -135,8 +135,8 @@ ARG PNPM_VERSION
 ARG GIT_COMMIT=unknown
 
 # OCI image metadata — populated at build time via --build-arg GIT_COMMIT=$(git rev-parse HEAD).
-LABEL org.opencontainers.image.title="worktime-backend" \
-      org.opencontainers.image.description="WorkTime NestJS API server" \
+LABEL org.opencontainers.image.title="Tact Backend" \
+      org.opencontainers.image.description="Tact — NestJS backend for Telegram+QR time tracking" \
       org.opencontainers.image.revision="${GIT_COMMIT}" \
       org.opencontainers.image.source="https://github.com/foxnaim/World-Time-back-End" \
       org.opencontainers.image.licenses="MIT"

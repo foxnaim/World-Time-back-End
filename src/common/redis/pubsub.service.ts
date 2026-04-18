@@ -1,6 +1,6 @@
 import { Injectable, Logger, OnModuleDestroy } from '@nestjs/common';
 import { Observable, Subject } from 'rxjs';
-import type { QRTokenDisplay } from '@worktime/types';
+import type { QRTokenDisplay } from '@tact/types';
 
 import { RedisService } from './redis.service';
 

@@ -1,4 +1,4 @@
 import { createZodDto } from 'nestjs-zod';
-import { StopTimerDtoSchema } from '@worktime/types';
+import { StopTimerDtoSchema } from '@tact/types';
 
 export class StopTimerDto extends createZodDto(StopTimerDtoSchema) {}

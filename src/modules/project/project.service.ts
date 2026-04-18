@@ -5,8 +5,8 @@ import {
   Logger,
   NotFoundException,
 } from '@nestjs/common';
-import { Prisma } from '@worktime/database';
-import type { ProjectMonthlySummary } from '@worktime/types';
+import { Prisma } from '@tact/database';
+import type { ProjectMonthlySummary } from '@tact/types';
 import { endOfMonth, parse, startOfMonth } from 'date-fns';
 
 import { PrismaService } from '@/common/prisma.service';

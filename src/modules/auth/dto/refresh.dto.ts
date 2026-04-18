@@ -1,7 +1,7 @@
 import { createZodDto } from 'nestjs-zod';
 import { z } from 'zod';
 
-import { RefreshRequestSchema } from '@worktime/types';
+import { RefreshRequestSchema } from '@tact/types';
 
 const Schema =
   (RefreshRequestSchema as z.ZodTypeAny | undefined) ??

@@ -17,7 +17,7 @@ const config: Config = {
   },
   moduleNameMapper: {
     '^@/(.*)$': '<rootDir>/../src/$1',
-    '^@worktime/(.*)$': '<rootDir>/../../packages/$1/src',
+    '^@tact/(.*)$': '<rootDir>/../../packages/$1/src',
   },
   setupFiles: ['<rootDir>/jest.setup.ts'],
 };

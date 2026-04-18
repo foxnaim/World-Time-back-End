@@ -1,5 +1,5 @@
 import { createZodDto } from 'nestjs-zod';
-import { CreateCompanyDtoSchema } from '@worktime/types';
+import { CreateCompanyDtoSchema } from '@tact/types';
 
 /**
  * NestJS DTO wrapper around the shared Zod schema so it can be used with

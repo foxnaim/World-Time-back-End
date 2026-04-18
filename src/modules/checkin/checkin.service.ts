@@ -9,7 +9,7 @@ import { CheckInType, EmployeeRole } from '@prisma/client';
 import { endOfMonth, startOfDay, startOfMonth } from 'date-fns';
 
 import { PrismaService } from '@/common/prisma.service';
-import type { CheckInResponse } from '@worktime/types';
+import type { CheckInResponse } from '@tact/types';
 import type { ScanQrDto } from './dto/scan-qr.dto';
 import type { ManualCheckinDto } from './dto/manual-checkin.dto';
 import { QrService } from './qr.service';

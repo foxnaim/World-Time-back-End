@@ -1,8 +1,8 @@
 <div align="center">
 
-# 🔧 World-Time Backend
+# 🔧 Tact Backend
 
-**NestJS backend + Telegram bot for WorkTime — time tracking via QR codes and messaging**
+**NestJS backend + Telegram bot for Tact — time tracking via QR codes and messaging**
 
 ![TypeScript](https://img.shields.io/badge/TypeScript-3178C6?style=for-the-badge&logo=typescript&logoColor=white)
 ![NestJS](https://img.shields.io/badge/NestJS-E0234E?style=for-the-badge&logo=nestjs&logoColor=white)
@@ -20,7 +20,9 @@
 
 ## About
 
-World-Time Backend is the core service powering the WorkTime platform — a time tracking product that bridges B2B office attendance (via rotating QR codes anchored to company coordinates) and B2C freelance time tracking (via Telegram-driven start/stop timers and projects). It handles every server-side concern of the product: Telegram-based authentication, company and employee lifecycle management, check-ins with cryptographically rotating QR tokens, time entries for freelancers, analytics (lateness, overtime, punctuality, real hourly rate), exports to Google Sheets, PDF attendance reports and freelance invoices, a platform-wide admin panel, and tier-based billing with seat limits.
+<sub>PRODUCT NAME: TACT · REPO: `World-Time-back-End`</sub>
+
+Tact Backend is the core service powering the Tact platform — a time tracking product that bridges B2B office attendance (via rotating QR codes anchored to company coordinates) and B2C freelance time tracking (via Telegram-driven start/stop timers and projects). It handles every server-side concern of the product: Telegram-based authentication, company and employee lifecycle management, check-ins with cryptographically rotating QR tokens, time entries for freelancers, analytics (lateness, overtime, punctuality, real hourly rate), exports to Google Sheets, PDF attendance reports and freelance invoices, a platform-wide admin panel, and tier-based billing with seat limits.
 
 The service is fully typed end-to-end (TypeScript + Prisma generated types + Zod DTOs), thoroughly tested (Jest unit tests + Supertest e2e), containerized as a multi-stage non-root Docker image, and observable out of the box (Pino structured logs, Sentry error tracking, Terminus health probes, Swagger/OpenAPI). It is designed to run behind an nginx reverse proxy in production and ships with a docker-compose stack (Postgres, Redis, backend, worker) plus a Telegram bot process embedded in the same NestJS application via `nestjs-telegraf`.
 
@@ -153,7 +155,7 @@ backend/
 ## Getting Started
 
 ```sh
-# Clone (mirror repo — for full workspace clone the WorkTime monorepo)
+# Clone (mirror repo — for full workspace clone the Tact monorepo)
 git clone https://github.com/foxnaim/World-Time-back-End.git
 cd World-Time-back-End
 
@@ -236,7 +238,7 @@ Before shipping to production, walk through `docs/SECURITY_CHECKLIST.md` — it 
 4. Register the command list via `/setcommands`:
    ```
    start - Start the bot / register
-   auth - Link your Telegram to WorkTime
+   auth - Link your Telegram to Tact
    checkin - Scan a rotating QR for office check-in
    projects - List your freelance projects
    timer - Start or stop a time entry
@@ -247,7 +249,7 @@ Before shipping to production, walk through `docs/SECURITY_CHECKLIST.md` — it 
 ## Links
 
 - Frontend: [World-Time-Frontend](https://github.com/foxnaim/World-Time-Frontend)
-- Monorepo (full workspace): [WorkTime](https://github.com/foxnaim/WorkTime)
+- Monorepo (full workspace): [foxnaim/WorkTime](https://github.com/foxnaim/WorkTime)
 - API docs (local): [http://localhost:4000/api/docs](http://localhost:4000/api/docs)
 
 ## License

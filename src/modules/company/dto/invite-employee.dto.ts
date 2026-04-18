@@ -1,4 +1,4 @@
 import { createZodDto } from 'nestjs-zod';
-import { InviteEmployeeDtoSchema } from '@worktime/types';
+import { InviteEmployeeDtoSchema } from '@tact/types';
 
 export class InviteEmployeeDto extends createZodDto(InviteEmployeeDtoSchema) {}

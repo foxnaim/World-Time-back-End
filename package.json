@@ -1,5 +1,5 @@
 {
-  "name": "@worktime/api",
+  "name": "@tact/api",
   "version": "0.1.0",
   "private": true,
   "main": "dist/main.js",
@@ -28,8 +28,8 @@
     "@paralleldrive/cuid2": "^2.2.2",
     "@prisma/client": "^5.22.0",
     "@willsoto/nestjs-prometheus": "^6.0.1",
-    "@worktime/database": "workspace:*",
-    "@worktime/types": "workspace:*",
+    "@tact/database": "workspace:*",
+    "@tact/types": "workspace:*",
     "class-transformer": "^0.5.1",
     "class-validator": "^0.14.1",
     "compression": "^1.7.5",

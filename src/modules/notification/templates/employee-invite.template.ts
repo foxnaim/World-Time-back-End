@@ -19,7 +19,7 @@ export function renderEmployeeInvite(input: EmployeeInviteInput): RenderedEmail 
     ? `@${telegramBotUsername.replace(/^@/, '')}`
     : undefined;
 
-  const subject = `You're invited to join ${companyName} on WorkTime`;
+  const subject = `Tact — You're invited to join ${companyName}`;
   const preheader = `Tap the link below to join ${companyName} and start logging your hours.`;
 
   const botLine = botHandle
@@ -28,7 +28,7 @@ export function renderEmployeeInvite(input: EmployeeInviteInput): RenderedEmail 
 
   const bodyHtml = `
     <h1>You're invited to ${safeCompany}</h1>
-    <p>Your manager at <strong>${safeCompany}</strong> added you to WorkTime so you can check in, check out, and see your hours — all from Telegram.</p>
+    <p>Your manager at <strong>${safeCompany}</strong> added you to Tact so you can check in, check out, and see your hours — all from Telegram.</p>
     <p><a class="button" href="${safeLink}">Accept invitation</a></p>
     ${botLine}
     <hr class="divider" />
@@ -41,7 +41,7 @@ export function renderEmployeeInvite(input: EmployeeInviteInput): RenderedEmail 
   const text = [
     `You're invited to ${companyName}`,
     '',
-    `Your manager at ${companyName} added you to WorkTime so you can check in, check out, and see your hours — all from Telegram.`,
+    `Your manager at ${companyName} added you to Tact so you can check in, check out, and see your hours — all from Telegram.`,
     '',
     `Accept your invitation: ${inviteLink}`,
     botHandle

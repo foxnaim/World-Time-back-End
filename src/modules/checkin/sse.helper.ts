@@ -1,6 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { Observable, ReplaySubject } from 'rxjs';
-import type { QRTokenDisplay } from '@worktime/types';
+import type { QRTokenDisplay } from '@tact/types';
 
 /**
  * SseHub

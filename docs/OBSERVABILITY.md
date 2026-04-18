@@ -1,6 +1,6 @@
 # Observability
 
-This document describes how the WorkTime backend is observed in production and
+This document describes how the Tact backend is observed in production and
 development: how logs are structured, how errors are captured, how metrics will
 be exposed, and how operators should wire alerts, dashboards, and debug
 sessions.

@@ -1,6 +1,6 @@
 # Telegram Bot
 
-WorkTime bot (`@<TELEGRAM_BOT_USERNAME>`) is the primary UI for end-users. All
+Tact bot (`@<TELEGRAM_BOT_USERNAME>`) is the primary UI for end-users. All
 app features are accessible via the bot — the web frontend is supplementary
 (dashboards, QR display, company admin). The bot is implemented with
 [`nestjs-telegraf`](https://github.com/bukhalo/nestjs-telegraf) and lives in
@@ -11,7 +11,7 @@ app features are accessible via the bot — the web frontend is supplementary
 Step-by-step:
 
 1. Open [@BotFather](https://t.me/BotFather) and run `/newbot`.
-2. Choose a name (e.g. `WorkTime`) and a unique username
+2. Choose a name (e.g. `Tact`) and a unique username
    (e.g. `worktime_aone_bot`).
 3. Copy the issued token into your deployment env as `TELEGRAM_BOT_TOKEN`.
 4. Run `/setcommands` → pick the bot → paste:
@@ -45,7 +45,7 @@ sequenceDiagram
   participant B as Bot (nestjs-telegraf)
   participant M as UserMiddleware
   participant S as Session (Map+Redis)
-  participant API as WorkTime Services
+  participant API as Tact Services
   participant DB as Postgres
 
   U->>B: /start qr_<token>

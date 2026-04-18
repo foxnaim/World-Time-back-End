@@ -1,13 +1,13 @@
-# Redis in WorkTime
+# Redis in Tact
 
-This document is the operator-facing reference for how the WorkTime
+This document is the operator-facing reference for how the Tact
 backend uses Redis: what it's for, what the key schema looks like, how
 to run it, how to inspect it, and where to take it as the product
 scales. The implementation-level view lives at
 `backend/src/common/redis/README.md`; this file is the "why + ops"
 view.
 
-## Why Redis in WorkTime
+## Why Redis in Tact
 
 The backend is stateless by design — every replica can serve any
 request. But several concerns genuinely need shared, low-latency,

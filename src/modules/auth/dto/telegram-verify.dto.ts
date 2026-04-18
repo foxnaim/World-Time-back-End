@@ -1,10 +1,10 @@
 import { createZodDto } from 'nestjs-zod';
 import { z } from 'zod';
 
-import { TelegramVerifyRequestSchema } from '@worktime/types';
+import { TelegramVerifyRequestSchema } from '@tact/types';
 
-// Fallback schema if @worktime/types export is unavailable at build time;
-// the exported TelegramVerifyRequestSchema from @worktime/types is preferred.
+// Fallback schema if @tact/types export is unavailable at build time;
+// the exported TelegramVerifyRequestSchema from @tact/types is preferred.
 const Schema =
   (TelegramVerifyRequestSchema as z.ZodTypeAny | undefined) ??
   z.object({

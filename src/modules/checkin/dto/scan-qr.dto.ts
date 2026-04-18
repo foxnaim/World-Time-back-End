@@ -1,10 +1,10 @@
 import { createZodDto } from 'nestjs-zod';
 import { z } from 'zod';
 
-import { ScanQrDtoSchema } from '@worktime/types';
+import { ScanQrDtoSchema } from '@tact/types';
 
 /**
- * The canonical ScanQrDto lives in @worktime/types so the Telegram bot and
+ * The canonical ScanQrDto lives in @tact/types so the Telegram bot and
  * the web clients can share the exact same validation contract. We fall back
  * to a local schema only if the export is unavailable at build time.
  */

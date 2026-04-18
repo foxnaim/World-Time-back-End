@@ -6,7 +6,7 @@ import type { Config } from 'jest';
  * ts-jest runs TypeScript in-process so no separate build step is needed.
  * Path aliases here mirror tsconfig.json:
  *   @/*          -> src/*
- *   @worktime/*  -> ../packages/*\/src   (workspace packages)
+ *   @tact/*  -> ../packages/*\/src   (workspace packages)
  *
  * e2e specs live under backend/test/ and have their own config
  * (see backend/jest-e2e.config.ts), so this config only matches *.spec.ts.
@@ -23,7 +23,7 @@ const config: Config = {
   },
   moduleNameMapper: {
     '^@/(.*)$': '<rootDir>/src/$1',
-    '^@worktime/(.*)$': '<rootDir>/../packages/$1/src',
+    '^@tact/(.*)$': '<rootDir>/../packages/$1/src',
   },
   collectCoverageFrom: ['src/**/*.ts', '!src/main.ts'],
   coverageDirectory: './coverage',

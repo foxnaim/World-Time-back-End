@@ -4,7 +4,7 @@ import type {
   CompanyRanking,
   OvertimeReport,
   UserRealHourlyRate,
-} from '@worktime/types';
+} from '@tact/types';
 
 import { PrismaService } from '@/common/prisma.service';
 

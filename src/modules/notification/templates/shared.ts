@@ -155,10 +155,11 @@ export function layout({ title, preheader, bodyHtml }: LayoutInput): string {
     <span class="preheader">${escapeHtml(preheader)}</span>
     <div class="wrapper">
       <div class="card">
-        <p class="brand">WorkTime</p>
+        <p class="brand">Tact</p>
         ${bodyHtml}
       </div>
-      <p class="footer">You're receiving this because WorkTime is helping manage your team's schedule. If this wasn't expected, you can safely ignore it.</p>
+      <p class="footer">You're receiving this because Tact is helping manage your team's schedule. If this wasn't expected, you can safely ignore it.</p>
+      <p class="footer">© Tact · ритм рабочего дня</p>
     </div>
   </body>
 </html>`;
