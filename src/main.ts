@@ -40,19 +40,13 @@ async function bootstrap(): Promise<void> {
 
   app.setGlobalPrefix('api');
 
-  // Zod-based DTOs (via `createZodDto` from `nestjs-zod`) need the
-  // ZodValidationPipe to actually run their schema — the stock
-  // ValidationPipe only consumes class-validator decorators, so without
-  // this, malformed bodies would reach service code and surface as 401s
-  // instead of the correct 400.
-  app.useGlobalPipes(
-    new ZodValidationPipe(),
-    new ValidationPipe({
-      whitelist: true,
-      transform: true,
-      forbidNonWhitelisted: false,
-    }),
-  );
+  // All HTTP DTOs are Zod-based (`createZodDto` from `nestjs-zod`). The
+  // ZodValidationPipe runs every schema and rejects malformed bodies with
+  // 400 BadRequest. We intentionally do NOT chain a class-validator
+  // `ValidationPipe` after it — when `whitelist: true` that pipe strips
+  // every property from Zod DTOs (they have no class-validator metadata)
+  // and the controller sees `dto` with all fields undefined.
+  app.useGlobalPipes(new ZodValidationPipe());
 
   app.useGlobalFilters(new HttpExceptionFilter());
   app.useGlobalInterceptors(app.get(LoggingInterceptor));
