@@ -62,11 +62,33 @@ export class BillingController {
       throw new ForbiddenException('Only the company owner may view billing');
     }
 
-    const subscription = await this.billing.getSubscription(companyId);
-    const tier = subscription?.tier ?? 'FREE';
-    const limits = this.billing.getEffectiveLimits(tier);
+    let subscription = await this.billing.getSubscription(companyId);
+    if (!subscription) {
+      this.logger.log(`no subscription for company=${companyId}, auto-creating FREE`);
+      subscription = await this.billing.createDefaultFreeSubscription(companyId);
+    }
 
-    return { subscription, tier, limits };
+    const tierLimits = this.billing.getEffectiveLimits(subscription.tier);
+
+    const currentSeats = await this.prisma.employee.count({
+      where: { companyId, status: 'ACTIVE' },
+    });
+
+    return {
+      subscription: {
+        tier: subscription.tier,
+        status: subscription.status,
+        seatsLimit: subscription.seatsLimit,
+        currentPeriodStart: subscription.currentPeriodStart,
+        currentPeriodEnd: subscription.currentPeriodEnd,
+      },
+      limits: {
+        seatsLimit: subscription.seatsLimit,
+        sheetsExport: tierLimits.sheetsExport,
+        monthlyReports: tierLimits.monthlyReports,
+      },
+      currentSeats,
+    };
   }
 
   /**
