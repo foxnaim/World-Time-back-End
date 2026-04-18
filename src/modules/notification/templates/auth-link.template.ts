@@ -13,7 +13,7 @@ export function renderAuthLink(input: AuthLinkInput): RenderedEmail {
   const { magicLink } = input;
   const safeLink = escapeHtml(magicLink);
 
-  const subject = 'Tact — Your sign-in link';
+  const subject = 'Work Tact — Your sign-in link';
   const preheader = 'Tap the button below to finish signing in. This link expires shortly.';
 
   const bodyHtml = `
@@ -29,7 +29,7 @@ export function renderAuthLink(input: AuthLinkInput): RenderedEmail {
   const html = layout({ title: subject, preheader, bodyHtml });
 
   const text = [
-    'Sign in to Tact',
+    'Sign in to Work Tact',
     '',
     'Tap the link below to finish signing in. For your safety this link can only be used once and will expire shortly.',
     '',

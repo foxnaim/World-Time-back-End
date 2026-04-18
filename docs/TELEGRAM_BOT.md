@@ -1,6 +1,6 @@
 # Telegram Bot
 
-Tact bot (`@<TELEGRAM_BOT_USERNAME>`) is the primary UI for end-users. All
+Work Tact bot (`@<TELEGRAM_BOT_USERNAME>`) is the primary UI for end-users. All
 app features are accessible via the bot — the web frontend is supplementary
 (dashboards, QR display, company admin). The bot is implemented with
 [`nestjs-telegraf`](https://github.com/bukhalo/nestjs-telegraf) and lives in
@@ -45,7 +45,7 @@ sequenceDiagram
   participant B as Bot (nestjs-telegraf)
   participant M as UserMiddleware
   participant S as Session (Map+Redis)
-  participant API as Tact Services
+  participant API as Work Tact Services
   participant DB as Postgres
 
   U->>B: /start qr_<token>

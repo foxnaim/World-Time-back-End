@@ -1,6 +1,6 @@
 # Rotating QR Anti-Fraud System
 
-Deep dive on how Tact prevents employees from checking in without physically
+Deep dive on how Work Tact prevents employees from checking in without physically
 being at the office. Reflects behaviour of
 `backend/src/modules/checkin/qr.service.ts`,
 `backend/src/modules/checkin/checkin.service.ts`, and

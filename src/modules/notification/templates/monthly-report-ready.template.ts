@@ -44,7 +44,7 @@ export function renderMonthlyReportReady(
   const friendlyMonth = formatMonth(month);
   const safeMonth = escapeHtml(friendlyMonth);
 
-  const subject = `Tact — ${friendlyMonth} report is ready for ${companyName}`;
+  const subject = `Work Tact — ${friendlyMonth} report is ready for ${companyName}`;
   const preheader = `Your ${friendlyMonth} attendance and payroll summary is live on Google Sheets.`;
 
   const bodyHtml = `

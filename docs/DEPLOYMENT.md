@@ -1,6 +1,6 @@
 # Deployment
 
-Tact is container-first. Deploy backend + frontend separately or use the bundled `docker-compose.prod.yml` + nginx config.
+Work Tact is container-first. Deploy backend + frontend separately or use the bundled `docker-compose.prod.yml` + nginx config.
 
 This guide walks through production-grade deploys across the most common targets: a self-hosted VPS (the cheapest and most flexible path), Railway (lowest operational overhead), Fly.io (edge-friendly), Render, AWS ECS Fargate (enterprise-scale), and Vercel (frontend only). Pick the row in the matrix that matches your team's budget, scale, and tolerance for ops work — the rest of this document assumes you've picked one.
 

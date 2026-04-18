@@ -61,8 +61,8 @@ async function bootstrap(): Promise<void> {
   await app.listen(port);
 
   const logger = app.get(Logger);
-  logger.log(`Tact API ready on :${port}`, 'Bootstrap');
-  logger.log(`Tact Swagger: http://localhost:${port}/api/docs`, 'Bootstrap');
+  logger.log(`Work Tact API ready on :${port}`, 'Bootstrap');
+  logger.log(`Work Tact Swagger: http://localhost:${port}/api/docs`, 'Bootstrap');
 }
 
 void bootstrap();

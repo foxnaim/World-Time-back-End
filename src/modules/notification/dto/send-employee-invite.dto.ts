@@ -17,7 +17,7 @@ export class SendEmployeeInviteDto {
   @IsUrl({ require_tld: false, require_protocol: true })
   inviteLink!: string;
 
-  /** Bot username without the leading @, e.g. "worktime_bot". Optional. */
+  /** Bot username without the leading @, e.g. "worktact_bot". Optional. */
   @IsOptional()
   @IsString()
   @MaxLength(64)

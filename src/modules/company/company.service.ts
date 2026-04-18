@@ -194,7 +194,7 @@ export class CompanyService {
       invitedByUserId: userId,
     });
 
-    const botUsername = process.env.TELEGRAM_BOT_USERNAME ?? 'worktime_bot';
+    const botUsername = process.env.TELEGRAM_BOT_USERNAME ?? 'worktact_bot';
     const inviteLink = `https://t.me/${botUsername}?start=inv_${token}`;
 
     return { inviteLink, token, expiresAt };

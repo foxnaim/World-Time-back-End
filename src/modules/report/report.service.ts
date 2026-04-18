@@ -73,7 +73,7 @@ export class ReportService {
       bufferPages: true,
       info: {
         Title: `Attendance — ${company.name} — ${month}`,
-        Author: 'Tact',
+        Author: 'Work Tact',
         Subject: `Monthly attendance report for ${month}`,
       },
     });
@@ -129,7 +129,7 @@ export class ReportService {
       bufferPages: true,
       info: {
         Title: `Invoice — ${month}`,
-        Author: 'Tact',
+        Author: 'Work Tact',
       },
     });
     registerFonts(doc);
@@ -266,7 +266,7 @@ export class ReportService {
 
     // Wordmark top-right
     useFont(doc, FONTS.body, 9).fillColor(COLORS.muted);
-    doc.text('TACT', right - 80, top, {
+    doc.text('WORK TACT', right - 80, top, {
       width: 80,
       align: 'right',
       characterSpacing: 1.2,
@@ -441,7 +441,7 @@ export class ReportService {
 
     // Wordmark top-right
     useFont(doc, FONTS.body, 9).fillColor(COLORS.muted);
-    doc.text('TACT', right - 80, top, {
+    doc.text('WORK TACT', right - 80, top, {
       width: 80,
       align: 'right',
       characterSpacing: 1.2,

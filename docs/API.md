@@ -1,4 +1,4 @@
-# Tact API Reference
+# Work Tact API Reference
 
 Base URL (local): `http://localhost:4000/api`
 Base URL (prod):  `https://api.your-domain.kz/api`

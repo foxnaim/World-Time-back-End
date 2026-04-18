@@ -1,6 +1,6 @@
 # Database
 
-Tact uses **PostgreSQL 16** with **Prisma 5** as the ORM. Schema lives at `packages/database/prisma/schema.prisma` — shared across backend, seed scripts, and any workers that need typed database access.
+Work Tact uses **PostgreSQL 16** with **Prisma 5** as the ORM. Schema lives at `packages/database/prisma/schema.prisma` — shared across backend, seed scripts, and any workers that need typed database access.
 
 The `@worktime/database` package exports the generated Prisma Client; no other package should import `@prisma/client` directly.
 
@@ -236,7 +236,7 @@ One-time invitation link consumed when an invitee opens the bot.
 
 ### Project
 
-B2C solo-freelancer workspace. Not tied to a Company — freelancers use Tact without creating a business.
+B2C solo-freelancer workspace. Not tied to a Company — freelancers use Work Tact without creating a business.
 
 | Field | Type | Notes |
 |-------|------|-------|
