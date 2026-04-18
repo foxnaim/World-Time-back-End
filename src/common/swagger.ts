@@ -1,8 +1,7 @@
 import { INestApplication, Logger } from '@nestjs/common';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 
-// eslint-disable-next-line @typescript-eslint/no-var-requires
-const pkg = require('../../package.json') as { version?: string };
+import pkg from '../../package.json';
 
 /**
  * Module tags surfaced in the Swagger UI. Keep this list in sync with

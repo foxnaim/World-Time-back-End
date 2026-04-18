@@ -2,6 +2,7 @@ import './instrument';
 import 'reflect-metadata';
 import { NestFactory } from '@nestjs/core';
 import { ValidationPipe } from '@nestjs/common';
+import { ZodValidationPipe } from 'nestjs-zod';
 import { Logger } from 'nestjs-pino';
 import helmet from 'helmet';
 import compression from 'compression';
@@ -39,7 +40,13 @@ async function bootstrap(): Promise<void> {
 
   app.setGlobalPrefix('api');
 
+  // Zod-based DTOs (via `createZodDto` from `nestjs-zod`) need the
+  // ZodValidationPipe to actually run their schema — the stock
+  // ValidationPipe only consumes class-validator decorators, so without
+  // this, malformed bodies would reach service code and surface as 401s
+  // instead of the correct 400.
   app.useGlobalPipes(
+    new ZodValidationPipe(),
     new ValidationPipe({
       whitelist: true,
       transform: true,

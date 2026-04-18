@@ -27,7 +27,6 @@ export const DEFAULT_MAX_LINE_LENGTH = 256;
  * legitimate in user input.
  */
 export function stripControlChars(input: string): string {
-  // eslint-disable-next-line no-control-regex
   return input.replace(/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F\u0080-\u009F]/g, '');
 }
 

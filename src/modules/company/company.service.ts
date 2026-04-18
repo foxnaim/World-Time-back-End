@@ -44,7 +44,6 @@ export class CompanyService {
     const baseSlug = slugify(dto.name) || 'company';
 
     let attempt = 0;
-    // eslint-disable-next-line no-constant-condition
     while (true) {
       const candidate = attempt === 0 ? baseSlug : `${baseSlug}-${createId().slice(0, 6)}`;
 
