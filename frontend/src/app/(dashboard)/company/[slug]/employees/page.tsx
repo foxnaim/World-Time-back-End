@@ -1,7 +1,7 @@
 'use client';
 
 import * as React from 'react';
-import { useParams } from 'next/navigation';
+import { useParams, useRouter } from 'next/navigation';
 import useSWR from 'swr';
 import { Button, Card, cn } from '@tact/ui';
 import { fetcher } from '@/lib/fetcher';
@@ -107,6 +107,7 @@ function EmployeesWithDepartments({
   acting,
   onMenu,
   onAssigned,
+  onSelect,
 }: {
   rows: Employee[];
   departments: Department[];
@@ -114,12 +115,13 @@ function EmployeesWithDepartments({
   acting: string | null;
   onMenu: (e: Employee, action: 'edit' | 'suspend' | 'remove') => void;
   onAssigned: () => void;
+  onSelect?: (e: Employee) => void;
 }) {
   const { t } = useLang();
 
   // If no departments configured, just render the plain table.
   if (departments.length === 0) {
-    return <EmployeesTable rows={rows} acting={acting} onMenu={onMenu} />;
+    return <EmployeesTable rows={rows} acting={acting} onMenu={onMenu} onSelect={onSelect} />;
   }
 
   if (rows.length === 0) {
@@ -146,7 +148,13 @@ function EmployeesWithDepartments({
           )}
         >
           {/* Reuse the table for a single row by slicing — simpler: render inline */}
-          <div className="px-4 py-4 flex items-center gap-3 hover:bg-[#D8C3A5]/15 transition-colors">
+          <div
+            className={cn(
+              'px-4 py-4 flex items-center gap-3 hover:bg-[#D8C3A5]/15 transition-colors',
+              onSelect && 'cursor-pointer',
+            )}
+            onClick={onSelect ? () => onSelect(employee) : undefined}
+          >
             {/* Avatar */}
             <span
               className="w-9 h-9 rounded-full bg-[#D8C3A5] text-[#3d3b38] flex items-center justify-center text-xs uppercase tracking-[0.22em] shrink-0"
@@ -178,12 +186,14 @@ function EmployeesWithDepartments({
               </div>
             </div>
             {/* Department assign */}
-            <DepartmentAssignRow
-              employee={employee}
-              departments={departments}
-              companyId={companyId}
-              onAssigned={onAssigned}
-            />
+            <div onClick={(e) => e.stopPropagation()}>
+              <DepartmentAssignRow
+                employee={employee}
+                departments={departments}
+                companyId={companyId}
+                onAssigned={onAssigned}
+              />
+            </div>
           </div>
         </div>
       ))}
@@ -194,11 +204,16 @@ function EmployeesWithDepartments({
 export default function EmployeesPage() {
   const params = useParams<{ slug: string }>();
   const slug = params?.slug;
+  const router = useRouter();
   const toast = useToast();
   const { t } = useLang();
 
   const [inviteOpen, setInviteOpen] = React.useState(false);
   const [query, setQuery] = React.useState('');
+  const [deptFilter, setDeptFilter] = React.useState('');
+  const [shiftFilter, setShiftFilter] = React.useState('');
+  const [absentTodayOnly, setAbsentTodayOnly] = React.useState(false);
+  const [showInactive, setShowInactive] = React.useState(false);
   const [editing, setEditing] = React.useState<Employee | null>(null);
   const [confirmDelete, setConfirmDelete] = React.useState<Employee | null>(null);
   const [acting, setActing] = React.useState<string | null>(null);
@@ -211,7 +226,9 @@ export default function EmployeesPage() {
   const id = company?.id;
 
   const { data, error, isLoading, mutate } = useSWR<EmployeesResp>(
-    id ? `/api/companies/${id}/employees` : null,
+    id
+      ? `/api/companies/${id}/employees${showInactive ? '?includeInactive=1' : ''}`
+      : null,
     fetcher,
   );
 
@@ -220,14 +237,36 @@ export default function EmployeesPage() {
     fetcher,
   );
 
+  // Distinct shifts derived from the current roster payload (avoids an extra fetch).
+  const shiftOptions = React.useMemo(() => {
+    const seen = new Map<string, string>();
+    for (const e of data?.items ?? []) {
+      if (e.shift) seen.set(e.shift.id, e.shift.name);
+    }
+    return Array.from(seen, ([sid, name]) => ({ id: sid, name }));
+  }, [data]);
+
   const rows = React.useMemo(() => {
-    const items = data?.items ?? [];
-    if (!query.trim()) return items;
-    const q = query.toLowerCase();
-    return items.filter(
-      (e) => e.name.toLowerCase().includes(q) || (e.position ?? '').toLowerCase().includes(q),
-    );
-  }, [data, query]);
+    let items = data?.items ?? [];
+    const q = query.trim().toLowerCase();
+    if (q) {
+      items = items.filter(
+        (e) => e.name.toLowerCase().includes(q) || (e.position ?? '').toLowerCase().includes(q),
+      );
+    }
+    if (deptFilter) items = items.filter((e) => e.departmentId === deptFilter);
+    if (shiftFilter) items = items.filter((e) => e.shiftId === shiftFilter);
+    if (absentTodayOnly) items = items.filter((e) => e.checkedInToday === false);
+    return items;
+  }, [data, query, deptFilter, shiftFilter, absentTodayOnly]);
+
+  const goToProfile = React.useCallback(
+    (employee: Employee) => {
+      if (!slug) return;
+      router.push(`/company/${slug}/employees/${employee.id}`);
+    },
+    [router, slug],
+  );
 
   const handleMenu = React.useCallback(
     async (employee: Employee, action: 'edit' | 'suspend' | 'remove') => {
@@ -321,6 +360,55 @@ export default function EmployeesPage() {
         </div>
       </div>
 
+      {/* Filter toolbar */}
+      <div className="flex flex-col sm:flex-row sm:flex-wrap items-stretch sm:items-center gap-3">
+        <select
+          value={deptFilter}
+          onChange={(e) => setDeptFilter(e.target.value)}
+          className="h-10 rounded-full border border-[#8E8D8A]/25 bg-transparent px-4 text-sm text-[#3d3b38] focus:outline-none focus:border-[#E98074]/60 transition-colors"
+        >
+          <option value="">{t('employees.filterAllDepartments')}</option>
+          {departments.map((d) => (
+            <option key={d.id} value={d.id}>
+              {d.name}
+            </option>
+          ))}
+        </select>
+        <select
+          value={shiftFilter}
+          onChange={(e) => setShiftFilter(e.target.value)}
+          className="h-10 rounded-full border border-[#8E8D8A]/25 bg-transparent px-4 text-sm text-[#3d3b38] focus:outline-none focus:border-[#E98074]/60 transition-colors"
+        >
+          <option value="">{t('employees.filterAllShifts')}</option>
+          {shiftOptions.map((s) => (
+            <option key={s.id} value={s.id}>
+              {s.name}
+            </option>
+          ))}
+        </select>
+        <button
+          type="button"
+          onClick={() => setAbsentTodayOnly((v) => !v)}
+          className={cn(
+            'h-10 rounded-full border px-4 text-xs uppercase tracking-[0.22em] transition-colors',
+            absentTodayOnly
+              ? 'border-[#E85A4F] bg-[#E85A4F]/10 text-[#E85A4F]'
+              : 'border-[#8E8D8A]/30 bg-transparent text-[#6b6966] hover:border-[#E85A4F]/50 hover:text-[#E85A4F]',
+          )}
+        >
+          {t('employees.chipAbsentToday')}
+        </button>
+        <label className="inline-flex items-center gap-2 h-10 px-2 text-sm text-[#3d3b38] cursor-pointer select-none">
+          <input
+            type="checkbox"
+            checked={showInactive}
+            onChange={(e) => setShowInactive(e.target.checked)}
+            className="h-4 w-4 accent-[#E98074]"
+          />
+          {t('employees.showInactive')}
+        </label>
+      </div>
+
       <Card className="!p-0">
         {companyErr || error ? (
           <ErrorState onRetry={() => mutate()} label={t('employees.loadError')} />
@@ -338,12 +426,14 @@ export default function EmployeesPage() {
             acting={acting}
             onMenu={handleMenu}
             onAssigned={() => void mutate()}
+            onSelect={goToProfile}
           />
         ) : (
           <EmployeesTable
             rows={rows}
             acting={acting}
             onMenu={handleMenu}
+            onSelect={goToProfile}
           />
         )}
       </Card>

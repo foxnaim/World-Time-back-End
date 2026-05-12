@@ -25,6 +25,8 @@ export type Employee = {
 export interface EmployeesTableProps {
   rows: Employee[];
   onMenu?: (e: Employee, action: 'edit' | 'suspend' | 'remove') => void;
+  /** Fired when a row (not the actions menu) is clicked — used to open the profile. */
+  onSelect?: (e: Employee) => void;
   acting?: string | null;
   className?: string;
 }
@@ -142,7 +144,7 @@ function RowMenu({ row, onMenu, disabled }: { row: Employee; onMenu?: EmployeesT
   );
 }
 
-export function EmployeesTable({ rows, onMenu, acting, className }: EmployeesTableProps) {
+export function EmployeesTable({ rows, onMenu, onSelect, acting, className }: EmployeesTableProps) {
   const { t } = useLang();
 
   if (rows.length === 0) {
@@ -196,9 +198,11 @@ export function EmployeesTable({ rows, onMenu, acting, className }: EmployeesTab
           {rows.map((r) => (
             <tr
               key={r.id}
+              onClick={onSelect ? () => onSelect(r) : undefined}
               className={cn(
                 GRID_COLS,
                 'items-center px-4 py-4 border-b border-[#8E8D8A]/10 hover:bg-[#D8C3A5]/15 transition-colors',
+                onSelect && 'cursor-pointer',
               )}
             >
               <th scope="row" className="flex items-center gap-3 min-w-0 font-normal text-left">
@@ -277,7 +281,7 @@ export function EmployeesTable({ rows, onMenu, acting, className }: EmployeesTab
                   <span className="text-[#6b6966]">—</span>
                 )}
               </td>
-              <td className="flex justify-end">
+              <td className="flex justify-end" onClick={(e) => e.stopPropagation()}>
                 <RowMenu row={r} onMenu={onMenu} disabled={acting === r.id} />
               </td>
             </tr>
