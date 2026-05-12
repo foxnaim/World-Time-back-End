@@ -32,9 +32,15 @@ export interface EmployeesTableProps {
   onSelect?: (e: Employee) => void;
   acting?: string | null;
   className?: string;
+  /** When provided, a leading checkbox column is rendered for bulk selection. */
+  selectedIds?: Set<string>;
+  onToggleRow?: (id: string) => void;
+  onToggleAll?: (checked: boolean) => void;
 }
 
 const GRID_COLS = 'grid grid-cols-[1.6fr_1.2fr_1fr_0.9fr_0.8fr_0.7fr_0.9fr_0.4fr]';
+const GRID_COLS_SEL =
+  'grid grid-cols-[0.3fr_1.6fr_1.2fr_1fr_0.9fr_0.8fr_0.7fr_0.9fr_0.4fr]';
 
 function initials(name: string) {
   const parts = name.trim().split(/\s+/);
@@ -147,8 +153,20 @@ function RowMenu({ row, onMenu, disabled }: { row: Employee; onMenu?: EmployeesT
   );
 }
 
-export function EmployeesTable({ rows, onMenu, onSelect, acting, className }: EmployeesTableProps) {
+export function EmployeesTable({
+  rows,
+  onMenu,
+  onSelect,
+  acting,
+  className,
+  selectedIds,
+  onToggleRow,
+  onToggleAll,
+}: EmployeesTableProps) {
   const { t } = useLang();
+  const selectable = !!selectedIds && !!onToggleRow;
+  const gridCols = selectable ? GRID_COLS_SEL : GRID_COLS;
+  const allSelected = selectable && rows.length > 0 && rows.every((r) => selectedIds!.has(r.id));
 
   if (rows.length === 0) {
     return (
@@ -169,10 +187,21 @@ export function EmployeesTable({ rows, onMenu, onSelect, acting, className }: Em
         <thead>
           <tr
             className={cn(
-              GRID_COLS,
+              gridCols,
               'px-4 py-3 border-b border-[#8E8D8A]/25 text-[10px] uppercase tracking-[0.28em] text-[#6b6966]',
             )}
           >
+            {selectable && (
+              <th scope="col" className="flex items-center font-normal">
+                <input
+                  type="checkbox"
+                  className="h-4 w-4 accent-[#E98074]"
+                  checked={allSelected}
+                  onChange={(e) => onToggleAll?.(e.target.checked)}
+                  aria-label={t('employees.colName')}
+                />
+              </th>
+            )}
             <th scope="col" className="text-left font-normal">
               {t('employees.colName')}
             </th>
@@ -203,11 +232,22 @@ export function EmployeesTable({ rows, onMenu, onSelect, acting, className }: Em
               key={r.id}
               onClick={onSelect ? () => onSelect(r) : undefined}
               className={cn(
-                GRID_COLS,
+                gridCols,
                 'items-center px-4 py-4 border-b border-[#8E8D8A]/10 hover:bg-[#D8C3A5]/15 transition-colors',
                 onSelect && 'cursor-pointer',
               )}
             >
+              {selectable && (
+                <td className="flex items-center" onClick={(e) => e.stopPropagation()}>
+                  <input
+                    type="checkbox"
+                    className="h-4 w-4 accent-[#E98074]"
+                    checked={selectedIds!.has(r.id)}
+                    onChange={() => onToggleRow!(r.id)}
+                    aria-label={r.name}
+                  />
+                </td>
+              )}
               <th scope="row" className="flex items-center gap-3 min-w-0 font-normal text-left">
                 <span
                   className="w-9 h-9 rounded-full bg-[#D8C3A5] text-[#3d3b38] flex items-center justify-center text-xs uppercase tracking-[0.22em] shrink-0"

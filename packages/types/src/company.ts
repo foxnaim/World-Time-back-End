@@ -89,6 +89,15 @@ export const BulkInviteResultSchema = z.object({
 });
 export type BulkInviteResult = z.infer<typeof BulkInviteResultSchema>;
 
+/** Body for `PATCH /api/companies/:id/employees/bulk`. */
+export const BulkUpdateEmployeesDtoSchema = z.object({
+  employeeIds: z.array(z.string().uuid()).min(1).max(500),
+  departmentId: z.string().uuid().nullable().optional(),
+  shiftId: z.string().uuid().nullable().optional(),
+  status: EmployeeStatusSchema.optional(),
+});
+export type BulkUpdateEmployeesDto = z.infer<typeof BulkUpdateEmployeesDtoSchema>;
+
 export const EmployeeResponseSchema = z.object({
   id: z.string().uuid(),
   companyId: z.string().uuid(),
