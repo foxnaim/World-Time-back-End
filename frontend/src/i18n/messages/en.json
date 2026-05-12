@@ -420,7 +420,12 @@
     "activityArrived": "{name} checked in · {time}",
     "activityLeft": "{name} checked out · {time}",
     "activityLateBadge": "+{n} min",
-    "activityLateBadgeGeneric": "late"
+    "activityLateBadgeGeneric": "late",
+    "presenceTitle": "Who's in the office now",
+    "presenceEmpty": "Nobody's here right now",
+    "presenceSince": "for {h}h {m}min",
+    "presenceMapTitle": "Live presence map",
+    "presenceNoCoords": "Check-in coordinates unavailable"
   },
   "employees": {
     "eyebrow": "Employees",

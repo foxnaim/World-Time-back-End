@@ -18,6 +18,7 @@ import { CurrentUser } from '@/common/decorators/current-user.decorator';
 import { RATE_LIMITS } from '@/common/throttle/throttle.constants';
 import { BotService } from '@/modules/telegram/bot.service';
 import { ActivityService } from '@/modules/checkin/activity.service';
+import { PresenceService } from '@/modules/checkin/presence.service';
 import { CompanyService } from './company.service';
 import { CreateCompanyDto } from './dto/create-company.dto';
 import { UpdateCompanyDto } from './dto/update-company.dto';
@@ -47,6 +48,7 @@ export class CompanyController {
     private readonly companyService: CompanyService,
     private readonly bot: BotService,
     private readonly activityService: ActivityService,
+    private readonly presenceService: PresenceService,
   ) {}
 
   /** Create a new company; caller becomes its OWNER. */
@@ -120,6 +122,16 @@ export class CompanyController {
     @Query('limit', new DefaultValuePipe(20), ParseIntPipe) limit: number,
   ) {
     return this.activityService.recentForCompany(id, limit);
+  }
+
+  /** Who's checked in at the office right now. OWNER/MANAGER. */
+  @Get(':id/presence/live')
+  @RequireRole(EmployeeRole.OWNER, EmployeeRole.MANAGER)
+  @ApiOperation({ summary: 'Live office presence for a company (OWNER/MANAGER)' })
+  @ApiResponse({ status: 200, description: 'Presence snapshot' })
+  @ApiResponse({ status: 403, description: 'Insufficient role' })
+  presenceLive(@Param('id') id: string) {
+    return this.presenceService.liveForCompany(id);
   }
 
   /** Generate a batch of Telegram deep-link invites in one request. */
