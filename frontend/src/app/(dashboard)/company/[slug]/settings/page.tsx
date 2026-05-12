@@ -343,6 +343,137 @@ function ShiftsCard({ companyId }: { companyId: string }) {
 }
 
 // ---------------------------------------------------------------------------
+// Holidays card — company calendar of non-working days
+// ---------------------------------------------------------------------------
+type Holiday = {
+  id: string;
+  date: string; // YYYY-MM-DD
+  name: string;
+};
+
+function HolidaysCard({ companyId }: { companyId: string }) {
+  const { t } = useLang();
+  const toast = useToast();
+
+  const { data: holidays, mutate: mutateHolidays } = useSWR<Holiday[]>(
+    `/api/companies/${companyId}/holidays`,
+    fetcher,
+  );
+
+  const [newDate, setNewDate] = React.useState('');
+  const [newName, setNewName] = React.useState('');
+  const [adding, setAdding] = React.useState(false);
+
+  const isValid = !!newDate && !!newName.trim();
+
+  const handleAdd = async () => {
+    if (!isValid) return;
+    setAdding(true);
+    try {
+      await api.post<Holiday>(`/api/companies/${companyId}/holidays`, {
+        date: newDate,
+        name: newName.trim(),
+      });
+      await mutateHolidays();
+      setNewDate('');
+      setNewName('');
+      toast.success(t('settings.holidayAdd'));
+    } catch (err: unknown) {
+      toast.error(t('settings.saveError'), {
+        description: (err as Error)?.message ?? '',
+      });
+    } finally {
+      setAdding(false);
+    }
+  };
+
+  const handleDelete = async (h: Holiday) => {
+    if (!confirm(`${h.date} — ${h.name}?`)) return;
+    try {
+      await api.delete(`/api/companies/${companyId}/holidays/${h.id}`);
+      await mutateHolidays();
+    } catch (err: unknown) {
+      toast.error(t('settings.deleteError'), {
+        description: (err as Error)?.message ?? '',
+      });
+    }
+  };
+
+  const sorted = React.useMemo(
+    () => (holidays ? [...holidays].sort((a, b) => a.date.localeCompare(b.date)) : []),
+    [holidays],
+  );
+
+  return (
+    <Card eyebrow={t('settings.scheduleEyebrow')} title={t('settings.holidaysTitle')}>
+      {/* Existing holidays list */}
+      {sorted.length > 0 ? (
+        <div className="mb-6 flex flex-col gap-2">
+          {sorted.map((h) => (
+            <div
+              key={h.id}
+              className="flex items-center justify-between gap-4 rounded-xl border border-[#8E8D8A]/20 bg-[#F5F0EA]/60 px-4 py-3"
+            >
+              <div className="min-w-0 flex-1 flex items-baseline gap-3">
+                <span
+                  className="tabular-nums text-sm text-[#3d3b38] shrink-0"
+                  style={{ fontFamily: 'Fraunces, serif' }}
+                >
+                  {h.date}
+                </span>
+                <span className="text-sm text-[#6b6966] truncate">{h.name}</span>
+              </div>
+              <button
+                type="button"
+                aria-label="delete"
+                onClick={() => handleDelete(h)}
+                className="shrink-0 h-7 w-7 rounded-full text-[#E85A4F] hover:bg-[#E85A4F]/10 leading-none text-base"
+              >
+                ×
+              </button>
+            </div>
+          ))}
+        </div>
+      ) : holidays && holidays.length === 0 ? (
+        <div className="mb-6 rounded-xl border border-[#8E8D8A]/20 bg-[#F5F0EA]/40 px-4 py-6 text-center">
+          <div className="text-[11px] text-[#8E8D8A]">{t('settings.holidaysEmpty')}</div>
+        </div>
+      ) : null}
+
+      {/* Add holiday inline form */}
+      <div className="border-t border-[#8E8D8A]/20 pt-5">
+        <div className="grid gap-5 grid-cols-1 sm:grid-cols-2">
+          <label className="flex flex-col gap-1.5">
+            <span className="text-[10px] uppercase tracking-[0.24em] text-[#6b6966]">
+              {t('settings.holidayDate')}
+            </span>
+            <Input type="date" value={newDate} onChange={(e) => setNewDate(e.target.value)} />
+          </label>
+          <label className="flex flex-col gap-1.5">
+            <span className="text-[10px] uppercase tracking-[0.24em] text-[#6b6966]">
+              {t('settings.holidayName')}
+            </span>
+            <Input
+              value={newName}
+              onChange={(e) => setNewName(e.target.value)}
+              placeholder={t('settings.holidayName')}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') void handleAdd();
+              }}
+            />
+          </label>
+        </div>
+        <div className="mt-5">
+          <Button onClick={handleAdd} disabled={adding || !isValid}>
+            {adding ? t('common.saving') : t('settings.holidayAdd')}
+          </Button>
+        </div>
+      </div>
+    </Card>
+  );
+}
+
+// ---------------------------------------------------------------------------
 // Locations card — isolated sub-component with its own SWR + state
 // ---------------------------------------------------------------------------
 function LocationsCard({ companyId }: { companyId: string }) {
@@ -861,6 +992,8 @@ export default function SettingsPage() {
       <DepartmentsCard companyId={form.id} />
 
       <ShiftsCard companyId={form.id} />
+
+      <HolidaysCard companyId={form.id} />
 
       <Card className="border border-[#E85A4F]/30">
         <div className="flex flex-col gap-3">

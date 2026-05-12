@@ -256,7 +256,12 @@
     "meters": "м",
     "scheduleEyebrow": "Жұмыс күні",
     "scheduleTitle": "Кесте",
-    "saveFailed": "Сақтау мүмкін болмады"
+    "saveFailed": "Сақтау мүмкін болмады",
+    "holidaysTitle": "Мерекелер және жұмыс істемейтін күндер",
+    "holidayDate": "Күні",
+    "holidayName": "Атауы",
+    "holidayAdd": "Қосу",
+    "holidaysEmpty": "Әзірге мерекелер қосылмаған"
   },
   "reports": {
     "eyebrow": "Есептер",
@@ -713,6 +718,7 @@
     "legendSick": "Ауру парағы",
     "legendDayoff": "Бос күн",
     "legendTrip": "Іссапар",
+    "legendHoliday": "Мереке",
     "legendWeekend": "Демалыс күні",
     "legendAbsent": "Жоқ"
   }

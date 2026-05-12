@@ -88,6 +88,9 @@ export class AttendanceWatchService {
     // Only nag once the grace window (start + 30 min) has elapsed.
     if (hour * 60 + minute <= company.workStartHour * 60 + 30) return;
 
+    // A company holiday today → no "not checked in" nudges.
+    if (await this.isHoliday(company.id, dateKey)) return;
+
     const employees = await this.prisma.employee.findMany({
       where: { companyId: company.id, status: 'ACTIVE', role: { not: EmployeeRole.OWNER } },
       select: { id: true, user: { select: { firstName: true, lastName: true } } },
@@ -138,6 +141,13 @@ export class AttendanceWatchService {
 
     const digestKey = `${company.id}:${dateKey}`;
     if (this.digestSent.has(digestKey)) return;
+
+    // No end-of-day digest on a company holiday. Mark it sent so we don't
+    // re-check every hour for the rest of the day.
+    if (await this.isHoliday(company.id, dateKey)) {
+      this.digestSent.add(digestKey);
+      return;
+    }
 
     const employees = await this.prisma.employee.findMany({
       where: { companyId: company.id, status: 'ACTIVE', role: { not: EmployeeRole.OWNER } },
@@ -193,6 +203,17 @@ export class AttendanceWatchService {
   // ---------------------------------------------------------------------------
   // Helpers
   // ---------------------------------------------------------------------------
+
+  /** Whether `dateKey` (`YYYY-MM-DD`, company-local) is a company holiday. */
+  private async isHoliday(companyId: string, dateKey: string): Promise<boolean> {
+    const date = new Date(`${dateKey}T00:00:00.000Z`);
+    if (Number.isNaN(date.getTime())) return false;
+    const found = await this.prisma.holiday.findUnique({
+      where: { companyId_date: { companyId, date } },
+      select: { id: true },
+    });
+    return found != null;
+  }
 
   private async loadCompanies(): Promise<CompanyRow[]> {
     return this.prisma.company.findMany({

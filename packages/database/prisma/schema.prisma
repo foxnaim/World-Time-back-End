@@ -53,6 +53,19 @@ model Company {
   departments     Department[]
   locations       Location[]
   shifts          Shift[]
+  holidays        Holiday[]
+}
+
+model Holiday {
+  id        String   @id @default(cuid())
+  company   Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  companyId String
+  date      DateTime @db.Date
+  name      String
+  createdAt DateTime @default(now())
+
+  @@unique([companyId, date])
+  @@index([companyId])
 }
 
 model Subscription {
@@ -209,6 +222,7 @@ enum EmployeeStatus {
 enum EmployeeRole {
   OWNER
   MANAGER
+  HR
   STAFF
 }
 
