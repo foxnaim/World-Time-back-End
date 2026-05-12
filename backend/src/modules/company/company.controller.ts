@@ -23,6 +23,7 @@ import { CreateCompanyDto } from './dto/create-company.dto';
 import { UpdateCompanyDto } from './dto/update-company.dto';
 import { InviteEmployeeDto } from './dto/invite-employee.dto';
 import { BulkInviteDto } from './dto/bulk-invite.dto';
+import { BulkUpdateEmployeesDto } from './dto/bulk-update-employees.dto';
 import { CompanyRoleGuard, RequireRole } from './guards/company-role.guard';
 import { SeatLimitGuard } from '@/modules/billing/guards/seat-limit.guard';
 
@@ -147,6 +148,20 @@ export class CompanyController {
   listEmployees(@Param('id') id: string, @Query('includeInactive') includeInactive?: string) {
     const include = includeInactive === '1' || includeInactive === 'true';
     return this.companyService.listEmployees(id, include);
+  }
+
+  /** Bulk-update employees: assign department/shift or change status. OWNER/MANAGER. */
+  @Patch(':id/employees/bulk')
+  @RequireRole(EmployeeRole.OWNER, EmployeeRole.MANAGER)
+  @ApiOperation({ summary: 'Bulk-update employees (OWNER/MANAGER)' })
+  @ApiResponse({ status: 200, description: 'Number of employees updated' })
+  @ApiResponse({ status: 403, description: 'Insufficient role' })
+  bulkUpdateEmployees(
+    @CurrentUser() user: AuthedUser,
+    @Param('id') id: string,
+    @Body() dto: BulkUpdateEmployeesDto,
+  ) {
+    return this.companyService.bulkUpdateEmployees(user.id, id, dto);
   }
 
   /** Rich profile for a single employee. */

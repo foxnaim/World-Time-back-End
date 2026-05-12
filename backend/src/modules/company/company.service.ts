@@ -19,6 +19,7 @@ import { InviteTokenService } from './invite-token.service';
 import type { CreateCompanyDto } from './dto/create-company.dto';
 import type { UpdateCompanyDto } from './dto/update-company.dto';
 import type { InviteEmployeeDto } from './dto/invite-employee.dto';
+import type { BulkUpdateEmployeesDto } from './dto/bulk-update-employees.dto';
 
 const MAX_SLUG_COLLISION_RETRIES = 5;
 
@@ -639,5 +640,60 @@ export class CompanyService {
         companyName: target.company.name,
       },
     };
+  }
+
+  /**
+   * Bulk-update a set of employees in one company. A present key in `dto` is
+   * applied to every employee; an absent key is left untouched; passing `null`
+   * for `departmentId`/`shiftId` clears that relation. Status changes use
+   * `update` (never hard-delete) — INACTIVE is the "fired" state.
+   */
+  async bulkUpdateEmployees(actorUserId: string, companyId: string, dto: BulkUpdateEmployeesDto) {
+    const actor = await this.prisma.employee.findFirst({
+      where: { userId: actorUserId, companyId },
+    });
+    if (!actor) throw new NotFoundException('Company not found');
+    if (actor.role !== EmployeeRole.OWNER && actor.role !== EmployeeRole.MANAGER) {
+      throw new ForbiddenException('Only OWNER or MANAGER can modify employees');
+    }
+
+    const ids = Array.from(new Set(dto.employeeIds));
+    const found = await this.prisma.employee.findMany({
+      where: { id: { in: ids }, companyId },
+      select: { id: true },
+    });
+    if (found.length !== ids.length) {
+      throw new NotFoundException('One or more employees do not belong to this company');
+    }
+
+    const data: Prisma.EmployeeUncheckedUpdateManyInput = {};
+    if ('departmentId' in dto) data.departmentId = dto.departmentId ?? null;
+    if ('shiftId' in dto) data.shiftId = dto.shiftId ?? null;
+    if (dto.status !== undefined) data.status = dto.status;
+
+    if (Object.keys(data).length === 0) {
+      return { updated: 0 };
+    }
+
+    const result = await this.prisma.employee.updateMany({
+      where: { id: { in: ids }, companyId },
+      data,
+    });
+
+    await this.audit.record({
+      actorUserId,
+      companyId,
+      action: 'employee.bulkUpdated',
+      targetType: 'Employee',
+      targetId: ids.join(','),
+      metadata: {
+        employeeIds: ids,
+        ...('departmentId' in dto ? { departmentId: dto.departmentId ?? null } : {}),
+        ...('shiftId' in dto ? { shiftId: dto.shiftId ?? null } : {}),
+        ...(dto.status !== undefined ? { status: dto.status } : {}),
+      },
+    });
+
+    return { updated: result.count };
   }
 }

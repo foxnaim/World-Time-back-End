@@ -61,6 +61,14 @@ type Department = {
   employeeCount: number;
 };
 
+type Shift = {
+  id: string;
+  name: string;
+  startHour: number;
+  endHour: number;
+  employeeCount: number;
+};
+
 function Skeleton({ className }: { className?: string }) {
   return <div className={cn('animate-pulse rounded-md bg-[#D8C3A5]/40', className)} />;
 }
@@ -253,6 +261,9 @@ export default function EmployeesPage() {
   const [confirmDelete, setConfirmDelete] = React.useState<Employee | null>(null);
   const [acting, setActing] = React.useState<string | null>(null);
   const [showDeptAssign, setShowDeptAssign] = React.useState(false);
+  const [selectedIds, setSelectedIds] = React.useState<Set<string>>(() => new Set());
+  const [bulkRunning, setBulkRunning] = React.useState(false);
+  const [confirmBulkDeactivate, setConfirmBulkDeactivate] = React.useState(false);
 
   const { data: company, error: companyErr } = useSWR<CompanyDetail>(
     slug ? `/api/companies/${slug}` : null,
@@ -269,6 +280,11 @@ export default function EmployeesPage() {
 
   const { data: departments = [] } = useSWR<Department[]>(
     id ? `/api/companies/${id}/departments` : null,
+    fetcher,
+  );
+
+  const { data: shifts = [] } = useSWR<Shift[]>(
+    id ? `/api/companies/${id}/shifts` : null,
     fetcher,
   );
 
@@ -346,6 +362,59 @@ export default function EmployeesPage() {
       setActing(null);
     }
   }, [confirmDelete, id, mutate, toast, t]);
+
+  // Prune selection when the visible roster changes (e.g. filters / refresh).
+  React.useEffect(() => {
+    setSelectedIds((prev) => {
+      const visible = new Set(rows.map((r) => r.id));
+      let changed = false;
+      const next = new Set<string>();
+      for (const sid of prev) {
+        if (visible.has(sid)) next.add(sid);
+        else changed = true;
+      }
+      return changed ? next : prev;
+    });
+  }, [rows]);
+
+  const toggleRow = React.useCallback((rowId: string) => {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(rowId)) next.delete(rowId);
+      else next.add(rowId);
+      return next;
+    });
+  }, []);
+
+  const toggleAll = React.useCallback(
+    (checked: boolean) => {
+      setSelectedIds(checked ? new Set(rows.map((r) => r.id)) : new Set());
+    },
+    [rows],
+  );
+
+  const clearSelection = React.useCallback(() => setSelectedIds(new Set()), []);
+
+  const runBulk = React.useCallback(
+    async (patch: { departmentId?: string | null; shiftId?: string | null; status?: 'ACTIVE' | 'INACTIVE' }) => {
+      if (!id || selectedIds.size === 0) return;
+      setBulkRunning(true);
+      try {
+        const res = await api.patch<{ updated: number }>(`/api/companies/${id}/employees/bulk`, {
+          employeeIds: Array.from(selectedIds),
+          ...patch,
+        });
+        toast.success(t('employees.bulkDone', { count: String(res?.updated ?? selectedIds.size) }));
+        clearSelection();
+        await mutate();
+      } catch (err) {
+        toast.error(t('common.error'), { description: err instanceof Error ? err.message : '' });
+      } finally {
+        setBulkRunning(false);
+      }
+    },
+    [id, selectedIds, toast, t, clearSelection, mutate],
+  );
 
   const hasDepartments = departments.length > 0;
 
@@ -432,6 +501,68 @@ export default function EmployeesPage() {
         </label>
       </div>
 
+      {/* Bulk selection toolbar */}
+      {selectedIds.size > 0 && (
+        <div className="sticky top-2 z-20 flex flex-wrap items-center gap-3 rounded-2xl border border-[#8E8D8A]/30 bg-[#EAE7DC]/95 backdrop-blur px-4 py-3 shadow-sm">
+          <span className="text-xs uppercase tracking-[0.22em] text-[#6b6966]">
+            {t('employees.bulkSelected', { count: String(selectedIds.size) })}
+          </span>
+          <Dropdown
+            align="left"
+            trigger={
+              <span className="inline-flex items-center gap-2 h-9 rounded-full border border-[#8E8D8A]/25 bg-transparent px-4 text-sm text-[#3d3b38] hover:border-[#E98074]/50 transition-colors">
+                {t('employees.bulkAssignDept')}
+                <span aria-hidden className="text-[10px] text-[#8E8D8A]">▾</span>
+              </span>
+            }
+            menuClassName="max-h-64 overflow-y-auto"
+          >
+            <DropdownItem onClick={() => void runBulk({ departmentId: null })}>
+              {t('employees.bulkNoDept')}
+            </DropdownItem>
+            {departments.map((d) => (
+              <DropdownItem key={d.id} onClick={() => void runBulk({ departmentId: d.id })}>
+                {d.name}
+              </DropdownItem>
+            ))}
+          </Dropdown>
+          <Dropdown
+            align="left"
+            trigger={
+              <span className="inline-flex items-center gap-2 h-9 rounded-full border border-[#8E8D8A]/25 bg-transparent px-4 text-sm text-[#3d3b38] hover:border-[#E98074]/50 transition-colors">
+                {t('employees.bulkAssignShift')}
+                <span aria-hidden className="text-[10px] text-[#8E8D8A]">▾</span>
+              </span>
+            }
+            menuClassName="max-h-64 overflow-y-auto"
+          >
+            <DropdownItem onClick={() => void runBulk({ shiftId: null })}>
+              {t('employees.bulkNoShift')}
+            </DropdownItem>
+            {shifts.map((s) => (
+              <DropdownItem key={s.id} onClick={() => void runBulk({ shiftId: s.id })}>
+                {s.name}
+              </DropdownItem>
+            ))}
+          </Dropdown>
+          <button
+            type="button"
+            disabled={bulkRunning}
+            onClick={() => setConfirmBulkDeactivate(true)}
+            className="h-9 rounded-full border border-[#E85A4F]/40 bg-transparent px-4 text-sm text-[#E85A4F] hover:bg-[#E85A4F]/10 disabled:opacity-50 transition-colors"
+          >
+            {t('employees.bulkDeactivate')}
+          </button>
+          <button
+            type="button"
+            onClick={clearSelection}
+            className="ml-auto h-9 rounded-full px-3 text-xs uppercase tracking-[0.22em] text-[#6b6966] hover:text-[#3d3b38] transition-colors"
+          >
+            {t('common.cancel')}
+          </button>
+        </div>
+      )}
+
       <Card className="!p-0">
         {companyErr || error ? (
           <ErrorState onRetry={() => mutate()} label={t('employees.loadError')} />
@@ -457,6 +588,9 @@ export default function EmployeesPage() {
             acting={acting}
             onMenu={handleMenu}
             onSelect={goToProfile}
+            selectedIds={selectedIds}
+            onToggleRow={toggleRow}
+            onToggleAll={toggleAll}
           />
         )}
       </Card>
@@ -478,6 +612,44 @@ export default function EmployeesPage() {
           onClose={() => setEditing(null)}
           onSaved={() => mutate()}
         />
+      )}
+
+      {/* Bulk deactivate confirmation */}
+      {confirmBulkDeactivate && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div
+            className="absolute inset-0 bg-[#2a2927]/40 backdrop-blur-sm"
+            onClick={() => setConfirmBulkDeactivate(false)}
+          />
+          <div className="relative w-full max-w-sm bg-[#EAE7DC] border border-[#8E8D8A]/20 rounded-2xl shadow-2xl p-8 text-center">
+            <div className="text-2xl text-[#2a2927] mb-2" style={{ fontFamily: 'Fraunces, serif' }}>
+              {t('employees.bulkDeactivate')}
+            </div>
+            <p className="text-sm text-[#6b6966] mb-6">
+              {t('employees.bulkConfirmDeactivate', { count: String(selectedIds.size) })}
+            </p>
+            <div className="flex gap-3">
+              <Button
+                variant="ghost"
+                className="flex-1"
+                onClick={() => setConfirmBulkDeactivate(false)}
+                disabled={bulkRunning}
+              >
+                {t('common.cancel')}
+              </Button>
+              <button
+                onClick={() => {
+                  setConfirmBulkDeactivate(false);
+                  void runBulk({ status: 'INACTIVE' });
+                }}
+                disabled={bulkRunning}
+                className="flex-1 h-10 rounded-lg bg-[#E85A4F] text-white text-sm tracking-tight hover:bg-[#d44f44] disabled:opacity-50 transition-colors"
+              >
+                {t('common.confirm')}
+              </button>
+            </div>
+          </div>
+        </div>
       )}
 
       {/* Delete confirmation */}
