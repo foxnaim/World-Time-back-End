@@ -177,6 +177,7 @@
     "navOverview": "Обзор",
     "navEmployees": "Сотрудники",
     "navReports": "Отчёты",
+    "navTimesheet": "Табель",
     "navQr": "QR",
     "navAbsences": "Отпуска",
     "navBilling": "Подписка",
@@ -633,5 +634,20 @@
     "emptyHint": "Добавьте первую запись об отсутствии",
     "confirmDelete": "Удалить запись об отсутствии?",
     "noEmployees": "Нет сотрудников"
+  },
+  "timesheet": {
+    "eyebrow": "Учёт рабочего времени",
+    "title": "Табель",
+    "colEmployee": "Сотрудник",
+    "loadError": "Не удалось загрузить табель. Попробуйте обновить.",
+    "empty": "Нет сотрудников за этот месяц",
+    "legendPresent": "На месте",
+    "legendLate": "Опоздание",
+    "legendVacation": "Отпуск",
+    "legendSick": "Больничный",
+    "legendDayoff": "Отгул",
+    "legendTrip": "Командировка",
+    "legendWeekend": "Выходной",
+    "legendAbsent": "Отсутствие"
   }
 }

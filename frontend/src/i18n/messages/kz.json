@@ -177,6 +177,7 @@
     "navOverview": "Шолу",
     "navEmployees": "Қызметкерлер",
     "navReports": "Есептер",
+    "navTimesheet": "Табель",
     "navQr": "QR",
     "navAbsences": "Демалыс",
     "navBilling": "Жазылым",
@@ -633,5 +634,20 @@
     "emptyHint": "Алғашқы болмау жазбасын қосыңыз",
     "confirmDelete": "Болмау жазбасын жою керек пе?",
     "noEmployees": "Қызметкерлер жоқ"
+  },
+  "timesheet": {
+    "eyebrow": "Жұмыс уақытын есепке алу",
+    "title": "Табель",
+    "colEmployee": "Қызметкер",
+    "loadError": "Табельді жүктеу мүмкін болмады. Бетті жаңартып көріңіз.",
+    "empty": "Осы айда қызметкерлер жоқ",
+    "legendPresent": "Орнында",
+    "legendLate": "Кешігу",
+    "legendVacation": "Демалыс",
+    "legendSick": "Ауру парағы",
+    "legendDayoff": "Бос күн",
+    "legendTrip": "Іссапар",
+    "legendWeekend": "Демалыс күні",
+    "legendAbsent": "Жоқ"
   }
 }
