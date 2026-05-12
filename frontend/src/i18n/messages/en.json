@@ -177,6 +177,7 @@
     "navOverview": "Overview",
     "navEmployees": "Employees",
     "navReports": "Reports",
+    "navTimesheet": "Timesheet",
     "navQr": "QR",
     "navAbsences": "Absences",
     "navBilling": "Subscription",
@@ -623,5 +624,20 @@
     "emptyHint": "Add the first absence record",
     "confirmDelete": "Delete this absence record?",
     "noEmployees": "No employees"
+  },
+  "timesheet": {
+    "eyebrow": "Time tracking",
+    "title": "Timesheet",
+    "colEmployee": "Employee",
+    "loadError": "Failed to load the timesheet. Try refreshing.",
+    "empty": "No employees for this month",
+    "legendPresent": "Present",
+    "legendLate": "Late",
+    "legendVacation": "Vacation",
+    "legendSick": "Sick leave",
+    "legendDayoff": "Day off",
+    "legendTrip": "Business trip",
+    "legendWeekend": "Weekend",
+    "legendAbsent": "Absent"
   }
 }

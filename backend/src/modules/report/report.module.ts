@@ -6,6 +6,8 @@ import { CompanyAdminGuard } from '@/modules/analytics/guards/company-admin.guar
 
 import { ReportController } from './report.controller';
 import { ReportService } from './report.service';
+import { TimesheetController } from './timesheet.controller';
+import { TimesheetService } from './timesheet.service';
 
 /**
  * ReportModule — PDF generation for B2B monthly attendance reports and B2C
@@ -18,8 +20,8 @@ import { ReportService } from './report.service';
  */
 @Module({
   imports: [PrismaModule, AnalyticsModule],
-  controllers: [ReportController],
-  providers: [ReportService, CompanyAdminGuard],
+  controllers: [ReportController, TimesheetController],
+  providers: [ReportService, TimesheetService, CompanyAdminGuard],
   exports: [ReportService],
 })
 export class ReportModule {}

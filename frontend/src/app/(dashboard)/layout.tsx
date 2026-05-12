@@ -563,6 +563,7 @@ const COMPANY_NAV = [
   { href: '/employees', labelKey: 'dashboard.navEmployees' },
   { href: '/absences', labelKey: 'dashboard.navAbsences' },
   { href: '/reports', labelKey: 'dashboard.navReports' },
+  { href: '/timesheet', labelKey: 'dashboard.navTimesheet' },
   { href: '/qr', labelKey: 'dashboard.navQr' },
   { href: '/billing', labelKey: 'dashboard.navBilling' },
   { href: '/settings', labelKey: 'dashboard.navSettings' },
