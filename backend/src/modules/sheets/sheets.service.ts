@@ -15,6 +15,8 @@ import type { GoogleAuth } from 'google-auth-library';
 import type { OAuth2Client } from 'google-auth-library';
 
 import { PrismaService } from '@/common/prisma.service';
+import { TimesheetService } from '@/modules/report/timesheet.service';
+import { PayrollService } from '@/modules/report/payroll.service';
 
 import * as sheetStore from './storage/company-sheet-store';
 import { GoogleOAuthService } from './google-oauth.service';
@@ -49,6 +51,8 @@ export class SheetsService {
     private readonly prisma: PrismaService,
     private readonly config: ConfigService,
     private readonly googleOAuth: GoogleOAuthService,
+    private readonly timesheetService: TimesheetService,
+    private readonly payrollService: PayrollService,
   ) {}
 
   // ----- auth -----
@@ -496,6 +500,156 @@ export class SheetsService {
       sheetId: stored.spreadsheetId,
       rowsExported,
     };
+  }
+
+  // ----- timesheet / payroll exports -----
+
+  /**
+   * Resolve the company + its spreadsheet (creating if needed), make sure a
+   * sheet/tab with `sheetTitle` exists, clear it, write `values` starting at
+   * A1, and freeze the header row. Returns the standard ExportResult.
+   *
+   * Shared by exportTimesheet/exportPayroll — mirrors how exportCompanyMonth
+   * handles auth, sheet creation and freezing.
+   */
+  private async writeReportSheet(
+    companyId: string,
+    sheetTitle: string,
+    values: (string | number | boolean)[][],
+    locale: Locale,
+  ): Promise<ExportResult> {
+    const company = await this.prisma.company.findUnique({
+      where: { id: companyId },
+      select: { id: true, name: true, ownerId: true },
+    });
+    if (!company) throw new NotFoundException('Company not found');
+
+    const stored = await this.getOrCreateSpreadsheet(
+      companyId,
+      company.name,
+      [],
+      company.ownerId,
+      locale,
+    );
+    const auth = await this.resolveAuth(company.ownerId);
+    const sheets = google.sheets({ version: 'v4', auth });
+
+    const meta = await sheets.spreadsheets.get({ spreadsheetId: stored.spreadsheetId });
+    let sheetId = findSheetId(meta.data.sheets ?? [], sheetTitle);
+    if (sheetId === undefined) {
+      await sheets.spreadsheets.batchUpdate({
+        spreadsheetId: stored.spreadsheetId,
+        requestBody: { requests: [{ addSheet: { properties: { title: sheetTitle } } }] },
+      });
+      const meta2 = await sheets.spreadsheets.get({ spreadsheetId: stored.spreadsheetId });
+      sheetId = findSheetId(meta2.data.sheets ?? [], sheetTitle);
+    }
+
+    await sheets.spreadsheets.values.batchClear({
+      spreadsheetId: stored.spreadsheetId,
+      requestBody: { ranges: [`${sheetTitle}!A:ZZ`] },
+    });
+    await sheets.spreadsheets.values.update({
+      spreadsheetId: stored.spreadsheetId,
+      range: `${sheetTitle}!A1`,
+      valueInputOption: 'RAW',
+      requestBody: { values },
+    });
+
+    if (sheetId !== undefined) {
+      await sheets.spreadsheets.batchUpdate({
+        spreadsheetId: stored.spreadsheetId,
+        requestBody: {
+          requests: [
+            {
+              updateSheetProperties: {
+                properties: { sheetId, gridProperties: { frozenRowCount: 1 } },
+                fields: 'gridProperties.frozenRowCount',
+              },
+            },
+          ],
+        },
+      });
+    }
+
+    const rowsExported = Math.max(0, values.length - 1);
+    return {
+      spreadsheetUrl: stored.url,
+      sheetId: stored.spreadsheetId,
+      rowsExported,
+    };
+  }
+
+  /**
+   * Export the monthly timesheet ("Табель") grid to a "Timesheet" tab — one
+   * row per employee, columns = day numbers, each cell holding the short code
+   * for that day's state (present/late/vacation/…).
+   */
+  async exportTimesheet(
+    userId: string,
+    companyId: string,
+    month: string,
+    locale: Locale = 'ru',
+  ): Promise<ExportResult> {
+    const dict = SHEETS_I18N[locale];
+    const ts = await this.timesheetService.getTimesheet(companyId, month, userId);
+    const dayNumbers = Array.from({ length: ts.days }, (_, i) => i + 1);
+    const values: (string | number | boolean)[][] = [
+      [dict.timesheetEmployeeHeader, ...dayNumbers],
+      ...ts.employees.map((emp) => [
+        emp.position ? `${emp.name} (${emp.position})` : emp.name,
+        ...dayNumbers.map((d) => {
+          const state = emp.cells[String(d)] ?? 'absent';
+          return dict.timesheetStateGlyphs[state] ?? '';
+        }),
+      ]),
+    ];
+    this.logger.log(
+      `Exported timesheet company=${companyId} month=${month} employees=${ts.employees.length}`,
+    );
+    return this.writeReportSheet(companyId, dict.timesheetSheet, values, locale);
+  }
+
+  /**
+   * Export the monthly payroll estimate to a "Payroll" tab — one row per
+   * employee with rate, expected/worked hours, delta and estimated pay.
+   */
+  async exportPayroll(
+    userId: string,
+    companyId: string,
+    month: string,
+    locale: Locale = 'ru',
+  ): Promise<ExportResult> {
+    // userId is accepted for parity with exportTimesheet and to allow future
+    // per-user auth inside the report service; PayrollService.getPayroll
+    // currently performs no caller check (the controller guards the route).
+    void userId;
+    const dict = SHEETS_I18N[locale];
+    const report = await this.payrollService.getPayroll(companyId, month);
+
+    const rateLabel = (r: (typeof report.employees)[number]): string => {
+      if (r.basis === 'hourly' && r.hourlyRate != null) return `${r.hourlyRate}/ч`;
+      if (r.basis === 'salary' && r.monthlySalary != null) return `${r.monthlySalary}/мес`;
+      return '—';
+    };
+
+    const values: (string | number | boolean)[][] = [
+      dict.payrollHeaders,
+      ...report.employees.map((r) => [
+        r.name,
+        r.position ?? '',
+        rateLabel(r),
+        r.expectedHours,
+        r.workedHours,
+        r.deltaHours,
+        r.estimatedPay ?? '',
+        r.proratedPay ?? '',
+      ]),
+    ];
+    this.logger.log(
+      `Exported payroll company=${companyId} month=${month} employees=${report.employees.length}`,
+    );
+    return this.writeReportSheet(companyId, dict.payrollSheet, values, locale);
   }
 }
 

@@ -267,6 +267,7 @@
     "exportOpen": "Открыть →",
     "exportNotConfigured": "Google Sheets не настроен. Обратитесь к администратору для настройки интеграции.",
     "exportError": "Не удалось экспортировать",
+    "exportConnectGoogle": "Подключить Google →",
     "linkManualTitle": "Привязать таблицу вручную",
     "linkManualStep1": "1. Создайте пустую таблицу на",
     "linkManualStep2": "2. Нажмите «Поделиться» и добавьте этот email как Editor:",
@@ -308,7 +309,11 @@
     "noBasis": "не задано",
     "totals": "Итого",
     "loadError": "Не удалось загрузить расчёт зарплаты",
-    "empty": "Нет активных сотрудников за этот месяц"
+    "empty": "Нет активных сотрудников за этот месяц",
+    "exportSheets": "Выгрузить в Google Sheets",
+    "exportSheetsLoading": "Выгрузка…",
+    "exportSheetsDone": "Зарплата выгружена в таблицу",
+    "exportError": "Не удалось выгрузить зарплату"
   },
   "qr": {
     "eyebrow": "QR для офиса",
@@ -714,6 +719,10 @@
     "legendDayoff": "Отгул",
     "legendTrip": "Командировка",
     "legendWeekend": "Выходной",
-    "legendAbsent": "Отсутствие"
+    "legendAbsent": "Отсутствие",
+    "exportSheets": "Выгрузить в Google Sheets",
+    "exportSheetsLoading": "Выгрузка…",
+    "exportSheetsDone": "Табель выгружен в таблицу",
+    "exportError": "Не удалось выгрузить табель"
   }
 }

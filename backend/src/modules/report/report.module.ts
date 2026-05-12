@@ -26,6 +26,6 @@ import { TimesheetService } from './timesheet.service';
   imports: [PrismaModule, AnalyticsModule],
   controllers: [ReportController, TimesheetController, PayrollController],
   providers: [ReportService, TimesheetService, PayrollService, CompanyAdminGuard, CompanyRoleGuard],
-  exports: [ReportService, PayrollService],
+  exports: [ReportService, PayrollService, TimesheetService],
 })
 export class ReportModule {}

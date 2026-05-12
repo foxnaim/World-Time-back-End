@@ -267,6 +267,7 @@
     "exportOpen": "Ашу →",
     "exportNotConfigured": "Google Sheets бапталмаған. Интеграцияны баптау үшін әкімшіге хабарласыңыз.",
     "exportError": "Экспорттау мүмкін болмады",
+    "exportConnectGoogle": "Google қосу →",
     "linkManualTitle": "Кестені қолмен байланыстыру",
     "linkManualStep1": "1. Бос кесте жасаңыз:",
     "linkManualStep2": "2. «Бөлісу» түймесін басып, осы email-ді Editor ретінде қосыңыз:",
@@ -308,7 +309,11 @@
     "noBasis": "белгіленбеген",
     "totals": "Барлығы",
     "loadError": "Жалақы есебін жүктеу мүмкін болмады",
-    "empty": "Осы айда белсенді қызметкерлер жоқ"
+    "empty": "Осы айда белсенді қызметкерлер жоқ",
+    "exportSheets": "Google Sheets-ке шығару",
+    "exportSheetsLoading": "Шығарылуда…",
+    "exportSheetsDone": "Жалақы кестеге шығарылды",
+    "exportError": "Жалақыны шығару мүмкін болмады"
   },
   "qr": {
     "eyebrow": "Кеңсе QR",
@@ -714,6 +719,10 @@
     "legendDayoff": "Бос күн",
     "legendTrip": "Іссапар",
     "legendWeekend": "Демалыс күні",
-    "legendAbsent": "Жоқ"
+    "legendAbsent": "Жоқ",
+    "exportSheets": "Google Sheets-ке шығару",
+    "exportSheetsLoading": "Шығарылуда…",
+    "exportSheetsDone": "Табель кестеге шығарылды",
+    "exportError": "Табельді шығару мүмкін болмады"
   }
 }

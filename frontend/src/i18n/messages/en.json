@@ -267,6 +267,7 @@
     "exportOpen": "Open →",
     "exportNotConfigured": "Google Sheets is not configured. Contact your administrator to set up the integration.",
     "exportError": "Failed to export",
+    "exportConnectGoogle": "Connect Google →",
     "linkManualTitle": "Link spreadsheet manually",
     "linkManualStep1": "1. Create an empty spreadsheet at",
     "linkManualStep2": "2. Click \"Share\" and add this email as Editor:",
@@ -308,7 +309,11 @@
     "noBasis": "not set",
     "totals": "Total",
     "loadError": "Failed to load payroll estimate",
-    "empty": "No active employees for this month"
+    "empty": "No active employees for this month",
+    "exportSheets": "Export to Google Sheets",
+    "exportSheetsLoading": "Exporting…",
+    "exportSheetsDone": "Payroll exported to the spreadsheet",
+    "exportError": "Failed to export payroll"
   },
   "qr": {
     "eyebrow": "Office QR",
@@ -714,6 +719,10 @@
     "legendDayoff": "Day off",
     "legendTrip": "Business trip",
     "legendWeekend": "Weekend",
-    "legendAbsent": "Absent"
+    "legendAbsent": "Absent",
+    "exportSheets": "Export to Google Sheets",
+    "exportSheetsLoading": "Exporting…",
+    "exportSheetsDone": "Timesheet exported to the spreadsheet",
+    "exportError": "Failed to export the timesheet"
   }
 }
