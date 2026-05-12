@@ -1,9 +1,23 @@
 'use client';
 
 import * as React from 'react';
-import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
+import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
+
+/** Force Leaflet to recompute tile coverage after the container settles. */
+function SizeFix() {
+  const map = useMap();
+  React.useEffect(() => {
+    const el = map.getContainer();
+    const fix = () => map.invalidateSize();
+    requestAnimationFrame(() => requestAnimationFrame(fix));
+    const ro = new ResizeObserver(fix);
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, [map]);
+  return null;
+}
 
 // ---------------------------------------------------------------------------
 // Self-contained CSS pin (coral teardrop) via L.divIcon — avoids Leaflet's
@@ -65,6 +79,7 @@ export default function PresenceMap({ markers, center, className }: PresenceMapP
         style={{ height: 280, width: '100%' }}
       >
         <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
+        <SizeFix />
         {markers.map((m) => (
           <Marker key={m.employeeId} position={[m.lat, m.lng]} icon={DEFAULT_ICON}>
             <Popup>{m.name}</Popup>

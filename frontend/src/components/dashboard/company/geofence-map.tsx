@@ -53,6 +53,26 @@ export type GeofenceMapProps = {
 // Almaty — matches the placeholder coords used elsewhere in settings.
 const DEFAULT_CENTER: [number, number] = [43.238949, 76.889709];
 
+/**
+ * Leaflet computes its tile coverage from the container size at init. When the
+ * map mounts before its flex/grid parent has settled (common with next/dynamic
+ * + ssr:false), it ends up rendering a tiny square. Force a recalc after mount
+ * and whenever the container resizes.
+ */
+function SizeFix() {
+  const map = useMap();
+  React.useEffect(() => {
+    const el = map.getContainer();
+    const fix = () => map.invalidateSize();
+    // a couple of rAF ticks covers the post-mount layout pass
+    requestAnimationFrame(() => requestAnimationFrame(fix));
+    const ro = new ResizeObserver(fix);
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, [map]);
+  return null;
+}
+
 /** Captures map clicks and forwards them as a new marker position. */
 function ClickCapture({ onChange }: { onChange: (next: LatLng) => void }) {
   useMapEvents({
@@ -116,6 +136,7 @@ export default function GeofenceMap({
       >
         <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
 
+        <SizeFix />
         <ClickCapture onChange={onChange} />
         <Recenter value={value} />
 
