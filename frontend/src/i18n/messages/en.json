@@ -177,6 +177,7 @@
     "navOverview": "Overview",
     "navEmployees": "Employees",
     "navReports": "Reports",
+    "navPayroll": "Payroll",
     "navQr": "QR",
     "navAbsences": "Absences",
     "navBilling": "Subscription",
@@ -286,6 +287,25 @@
     "colTotal": "Total",
     "emptyPayouts": "No payout data",
     "loadError": "Failed to load. Try refreshing."
+  },
+  "payroll": {
+    "eyebrow": "Estimate",
+    "title": "Payroll",
+    "note": "Figures are rough estimates based on check-ins. Hourly rate is multiplied by worked hours; monthly salary is shown in full.",
+    "workingDays": "Working days this month",
+    "colEmployee": "Employee",
+    "colPosition": "Position",
+    "colRate": "Rate/Salary",
+    "colExpectedHours": "Expected hours",
+    "colWorkedHours": "Worked",
+    "colDelta": "Δ",
+    "colEstimatedPay": "Estimated pay (≈)",
+    "perHour": "hour",
+    "perMonth": "mo",
+    "noBasis": "not set",
+    "totals": "Total",
+    "loadError": "Failed to load payroll estimate",
+    "empty": "No active employees for this month"
   },
   "qr": {
     "eyebrow": "Office QR",

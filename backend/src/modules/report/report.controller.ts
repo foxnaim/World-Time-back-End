@@ -12,8 +12,12 @@ import {
 import { AuthGuard } from '@nestjs/passport';
 import type { Request, Response } from 'express';
 
-import { CompanyAdminGuard } from '@/modules/analytics/guards/company-admin.guard';
+import { EmployeeRole } from '@prisma/client';
 
+import { CompanyAdminGuard } from '@/modules/analytics/guards/company-admin.guard';
+import { CompanyRoleGuard, RequireRole } from '@/modules/company/guards/company-role.guard';
+
+import { PayrollService } from './payroll.service';
 import { ReportService } from './report.service';
 
 type JwtUser = { id: string; telegramId: string };
@@ -92,5 +96,25 @@ export class ReportController {
     res.setHeader('Cache-Control', 'private, no-store');
 
     stream.pipe(res);
+  }
+}
+
+/**
+ * Payroll estimate endpoint. Lives alongside the report controller (shares the
+ * report module's date/timezone helpers) but is mounted under `/companies` so
+ * the URL reads `GET /api/companies/:id/payroll?month=YYYY-MM`.
+ *
+ * OWNER/MANAGER only — enforced by CompanyRoleGuard reading the `:id` param.
+ */
+@Controller('companies')
+@UseGuards(AuthGuard('jwt'), CompanyRoleGuard)
+export class PayrollController {
+  constructor(private readonly payroll: PayrollService) {}
+
+  @Get(':id/payroll')
+  @RequireRole(EmployeeRole.OWNER, EmployeeRole.MANAGER)
+  async getPayroll(@Param('id') companyId: string, @Query('month') month: string) {
+    const m = assertMonth(month);
+    return this.payroll.getPayroll(companyId, m);
   }
 }
