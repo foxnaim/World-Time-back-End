@@ -18,6 +18,11 @@ export function mainMenu(role: UserRole): Keyboard {
     rows.push(['Проекты', 'Таймер']);
   }
 
+  // STAFF / MANAGER (company employees) can request leave from the bot.
+  if (role === 'b2b' || role === 'both') {
+    rows.push(['Запросить отпуск']);
+  }
+
   // Owners, managers (both), and freelancers see web login
   if (role === 'owner' || role === 'b2c' || role === 'both') {
     rows.push(['Статистика', 'Войти']);
@@ -30,7 +35,7 @@ export function mainMenu(role: UserRole): Keyboard {
 
 export function checkinMenu(isCurrentlyIn: boolean): Keyboard {
   const label = isCurrentlyIn ? 'Уйти с работы' : 'Отметиться';
-  return Markup.keyboard([[label], ['Статистика']]).resize();
+  return Markup.keyboard([[label], ['Запросить отпуск'], ['Статистика']]).resize();
 }
 
 export function shareLocation(): Keyboard {

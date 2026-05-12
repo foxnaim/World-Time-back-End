@@ -4,6 +4,14 @@ import type { RedisService } from '@/common/redis/redis.service';
 export interface TelegramSession {
   lastLocation?: { lat: number; lng: number; at: number };
   pendingQr?: string;
+  /** In-progress "request leave" flow state. */
+  absenceFlow?: {
+    step: 'type' | 'company' | 'start' | 'end';
+    companyId?: string;
+    employeeId?: string;
+    type?: 'VACATION' | 'SICK_LEAVE' | 'DAY_OFF' | 'BUSINESS_TRIP';
+    startDate?: string; // YYYY-MM-DD
+  };
 }
 
 /**
@@ -88,6 +96,9 @@ function hydrate(telegramId: string): void {
         }
         if (parsed.pendingQr && !raw.pendingQr) {
           raw.pendingQr = parsed.pendingQr;
+        }
+        if (parsed.absenceFlow && !raw.absenceFlow) {
+          raw.absenceFlow = parsed.absenceFlow;
         }
       } catch (err) {
         logger.warn(

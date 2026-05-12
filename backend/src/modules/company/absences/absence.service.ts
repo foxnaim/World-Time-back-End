@@ -4,7 +4,7 @@ import {
   Logger,
   NotFoundException,
 } from '@nestjs/common';
-import { AbsenceType, EmployeeRole } from '@prisma/client';
+import { AbsenceStatus, AbsenceType, EmployeeRole } from '@prisma/client';
 import { PrismaService } from '@/common/prisma.service';
 import { BotService } from '@/modules/telegram/bot.service';
 import type { CreateAbsenceDto } from './absence.dto';
@@ -15,6 +15,12 @@ const ABSENCE_MESSAGES: Record<AbsenceType, (name: string, start: string, end: s
   DAY_OFF: (n, s, e) => `😌 Хорошего отдыха, ${n}! Выходной утверждён: ${s === e ? s : `${s} – ${e}`}.`,
   BUSINESS_TRIP: (n, s, e) => `✈️ Удачной командировки, ${n}! ${s} – ${e}.`,
 };
+
+const APPROVER_ROLES: EmployeeRole[] = [
+  EmployeeRole.OWNER,
+  EmployeeRole.MANAGER,
+  EmployeeRole.HR,
+];
 
 function fmtDate(iso: string | Date): string {
   const d = new Date(iso);
@@ -31,13 +37,15 @@ export class AbsenceService {
   ) {}
 
   /**
-   * List all absences for a company, optionally filtered to a calendar month.
+   * List all absences for a company, optionally filtered to a calendar month
+   * and/or a status.
    *
    * @param companyId  The company whose absences to list.
    * @param month      Optional "YYYY-MM" string; when provided, only absences
    *                   that overlap the calendar month are returned.
+   * @param status     Optional AbsenceStatus filter (PENDING/APPROVED/REJECTED).
    */
-  async list(companyId: string, month?: string) {
+  async list(companyId: string, month?: string, status?: AbsenceStatus) {
     // Build an optional date-range filter that catches any absence whose
     // [startDate, endDate] interval overlaps the requested month.
     let dateFilter: { startDate?: object; endDate?: object } = {};
@@ -58,6 +66,7 @@ export class AbsenceService {
       where: {
         employee: { companyId },
         ...dateFilter,
+        ...(status ? { status } : {}),
       },
       include: {
         employee: {
@@ -79,6 +88,7 @@ export class AbsenceService {
         .join(' ')
         .trim() || a.employee.user.username || a.employeeId,
       type: a.type,
+      status: a.status,
       startDate: a.startDate.toISOString(),
       endDate: a.endDate.toISOString(),
       note: a.note ?? null,
@@ -88,8 +98,9 @@ export class AbsenceService {
   }
 
   /**
-   * Create a new absence record.
+   * Create a new absence record (manager-initiated, via REST).
    * Only OWNER or MANAGER employees of the company may call this.
+   * The absence is APPROVED immediately (schema default).
    */
   async create(userId: string, companyId: string, dto: CreateAbsenceDto) {
     await this.requireOwnerOrManager(userId, companyId);
@@ -111,6 +122,7 @@ export class AbsenceService {
         endDate: new Date(dto.endDate),
         note: dto.note ?? null,
         approvedById: userId,
+        // status defaults to APPROVED in the schema
       },
     });
 
@@ -121,7 +133,60 @@ export class AbsenceService {
       this.logger.warn(`absence notify failed: ${(e as Error).message}`),
     );
 
-    return { id: absence.id, ...dto, createdAt: absence.createdAt.toISOString() };
+    return { id: absence.id, ...dto, status: absence.status, createdAt: absence.createdAt.toISOString() };
+  }
+
+  /**
+   * Approve a PENDING absence request. OWNER/MANAGER/HR only.
+   */
+  async approve(userId: string, companyId: string, absenceId: string) {
+    return this.decide(userId, companyId, absenceId, AbsenceStatus.APPROVED);
+  }
+
+  /**
+   * Reject a PENDING absence request. OWNER/MANAGER/HR only.
+   */
+  async reject(userId: string, companyId: string, absenceId: string) {
+    return this.decide(userId, companyId, absenceId, AbsenceStatus.REJECTED);
+  }
+
+  private async decide(
+    userId: string,
+    companyId: string,
+    absenceId: string,
+    status: AbsenceStatus,
+  ) {
+    await this.requireApprover(userId, companyId);
+
+    const absence = await this.prisma.absence.findFirst({
+      where: { id: absenceId, employee: { companyId } },
+      include: { employee: { include: { user: { select: { telegramId: true, firstName: true } } } } },
+    });
+    if (!absence) {
+      throw new NotFoundException('Absence record not found');
+    }
+
+    const updated = await this.prisma.absence.update({
+      where: { id: absenceId },
+      data: { status, approvedById: userId },
+    });
+
+    const name = absence.employee.user.firstName;
+    const start = fmtDate(absence.startDate);
+    const end = fmtDate(absence.endDate);
+    const msg =
+      status === AbsenceStatus.APPROVED
+        ? ABSENCE_MESSAGES[absence.type](name, start, end)
+        : `❌ ${name}, ваша заявка отклонена: ${start} – ${end}.`;
+    this.bot.notifyUser(absence.employee.user.telegramId, msg).catch((e) =>
+      this.logger.warn(`absence decision notify failed: ${(e as Error).message}`),
+    );
+
+    return {
+      id: updated.id,
+      status: updated.status,
+      approvedById: updated.approvedById ?? null,
+    };
   }
 
   /**
@@ -155,6 +220,19 @@ export class AbsenceService {
     }
     if (emp.role !== EmployeeRole.OWNER && emp.role !== EmployeeRole.MANAGER) {
       throw new ForbiddenException('OWNER or MANAGER role required');
+    }
+    return emp;
+  }
+
+  private async requireApprover(userId: string, companyId: string) {
+    const emp = await this.prisma.employee.findFirst({
+      where: { userId, companyId },
+    });
+    if (!emp) {
+      throw new ForbiddenException('You are not a member of this company');
+    }
+    if (!APPROVER_ROLES.includes(emp.role)) {
+      throw new ForbiddenException('OWNER, MANAGER or HR role required');
     }
     return emp;
   }

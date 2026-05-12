@@ -17,6 +17,7 @@ import { CheckinHandler } from './handlers/checkin.handler';
 import { ProjectHandler } from './handlers/project.handler';
 import { StatsHandler } from './handlers/stats.handler';
 import { AdminHandler } from './handlers/admin.handler';
+import { AbsenceRequestHandler } from './handlers/absence-request.handler';
 import { UserMiddleware } from './middleware/user.middleware';
 import { TelegramErrorsFilter } from './handlers/errors.filter';
 import { registerSessionRedis } from './session';
@@ -91,6 +92,7 @@ import { registerSessionRedis } from './session';
     ProjectHandler,
     StatsHandler,
     AdminHandler,
+    AbsenceRequestHandler,
     TelegramErrorsFilter,
   ],
   exports: [BotService],

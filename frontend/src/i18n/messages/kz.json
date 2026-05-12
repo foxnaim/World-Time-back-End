@@ -703,7 +703,16 @@
     "emptyTitle": "Болмаулар жоқ",
     "emptyHint": "Алғашқы болмау жазбасын қосыңыз",
     "confirmDelete": "Болмау жазбасын жою керек пе?",
-    "noEmployees": "Қызметкерлер жоқ"
+    "noEmployees": "Қызметкерлер жоқ",
+    "colStatus": "Мәртебесі",
+    "pendingTitle": "Қаралудағы өтінімдер",
+    "approve": "Мақұлдау",
+    "reject": "Қабылдамау",
+    "statusPending": "Күтуде",
+    "statusApproved": "Мақұлданды",
+    "statusRejected": "Қабылданбады",
+    "decideError": "Өтінімді өңдеу мүмкін болмады",
+    "requestSent": "Өтінім келісуге жіберілді"
   },
   "timesheet": {
     "eyebrow": "Жұмыс уақытын есепке алу",

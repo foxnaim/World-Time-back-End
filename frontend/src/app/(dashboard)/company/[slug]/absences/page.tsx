@@ -16,12 +16,14 @@ import { useLang } from '@/i18n/context';
 type CompanyDetail = { id: string; slug: string; name: string };
 
 type AbsenceType = 'VACATION' | 'SICK_LEAVE' | 'DAY_OFF' | 'BUSINESS_TRIP';
+type AbsenceStatus = 'PENDING' | 'APPROVED' | 'REJECTED';
 
 type Absence = {
   id: string;
   employeeId: string;
   employeeName: string;
   type: AbsenceType;
+  status: AbsenceStatus;
   startDate: string;
   endDate: string;
   note: string | null;
@@ -75,6 +77,24 @@ function TypeBadge({ type, label }: { type: AbsenceType; label: string }) {
       className={cn(
         'inline-flex items-center px-2 h-5 rounded-full border text-[10px] uppercase tracking-[0.2em]',
         colorMap[type],
+      )}
+    >
+      {label}
+    </span>
+  );
+}
+
+function StatusBadge({ status, label }: { status: AbsenceStatus; label: string }) {
+  const colorMap: Record<AbsenceStatus, string> = {
+    PENDING: 'border-[#E98074]/60 text-[#E98074] bg-[#E98074]/10',
+    APPROVED: 'border-[#8E8D8A]/50 text-[#5a7d5a] bg-[#8E8D8A]/10',
+    REJECTED: 'border-[#E85A4F]/60 text-[#E85A4F] bg-[#E85A4F]/10',
+  };
+  return (
+    <span
+      className={cn(
+        'inline-flex items-center px-2 h-5 rounded-full border text-[10px] uppercase tracking-[0.2em]',
+        colorMap[status],
       )}
     >
       {label}
@@ -151,6 +171,16 @@ export default function AbsencesPage() {
     BUSINESS_TRIP: t('absences.typeBusinessTrip'),
   };
 
+  // Absence status label map
+  const statusLabels: Record<AbsenceStatus, string> = {
+    PENDING: t('absences.statusPending'),
+    APPROVED: t('absences.statusApproved'),
+    REJECTED: t('absences.statusRejected'),
+  };
+
+  // Per-row decision tracking (approve/reject pending requests)
+  const [decidingId, setDecidingId] = React.useState<string | null>(null);
+
   // Update URL when month changes
   React.useEffect(() => {
     if (typeof window === 'undefined') return;
@@ -208,12 +238,26 @@ export default function AbsencesPage() {
     }
   };
 
+  const handleDecide = async (id: string, decision: 'approve' | 'reject') => {
+    if (!companyId) return;
+    setDecidingId(id);
+    try {
+      await api.patch(`/api/companies/${companyId}/absences/${id}/${decision}`, {});
+      await mutate();
+    } catch (err) {
+      alert((err as Error)?.message ?? t('absences.decideError'));
+    } finally {
+      setDecidingId(null);
+    }
+  };
+
   // -------------------------------------------------------------------------
   // Render
   // -------------------------------------------------------------------------
 
   const hasError = companyErr || absencesErr;
   const rows = absences ?? [];
+  const pendingRows = rows.filter((r) => r.status === 'PENDING');
 
   return (
     <div className="space-y-8">
@@ -367,6 +411,59 @@ export default function AbsencesPage() {
         </div>
       )}
 
+      {/* Pending requests awaiting a decision */}
+      {pendingRows.length > 0 && (
+        <div className="border border-[#E98074]/40 rounded-2xl bg-[#E98074]/[0.06] overflow-hidden">
+          <div className="px-6 py-3 border-b border-[#E98074]/25 text-[10px] uppercase tracking-[0.28em] text-[#6b6966]">
+            {t('absences.pendingTitle')} ({pendingRows.length})
+          </div>
+          <ul>
+            {pendingRows.map((row) => {
+              const isDeciding = decidingId === row.id;
+              return (
+                <li
+                  key={row.id}
+                  className={cn(
+                    'flex items-center gap-4 px-6 py-4 border-b border-[#E98074]/10 last:border-0 flex-wrap transition-colors',
+                    isDeciding && 'opacity-40',
+                  )}
+                >
+                  <div className="text-sm text-[#3d3b38] font-medium min-w-[8rem]">
+                    {row.employeeName}
+                  </div>
+                  <TypeBadge type={row.type} label={typeLabels[row.type] ?? row.type} />
+                  <div className="text-sm text-[#3d3b38]">
+                    {formatDate(row.startDate)}
+                    {row.startDate !== row.endDate && (
+                      <span className="text-[#6b6966]"> — {formatDate(row.endDate)}</span>
+                    )}
+                  </div>
+                  {row.note && (
+                    <div className="text-sm text-[#6b6966] truncate max-w-[12rem]">{row.note}</div>
+                  )}
+                  <div className="ml-auto flex items-center gap-2">
+                    <button
+                      onClick={() => handleDecide(row.id, 'approve')}
+                      disabled={isDeciding}
+                      className="inline-flex items-center h-8 px-4 rounded-full bg-[#E98074] text-[#EAE7DC] text-xs uppercase tracking-[0.22em] hover:bg-[#d47068] transition-colors disabled:opacity-50"
+                    >
+                      {t('absences.approve')}
+                    </button>
+                    <button
+                      onClick={() => handleDecide(row.id, 'reject')}
+                      disabled={isDeciding}
+                      className="inline-flex items-center h-8 px-4 rounded-full border border-[#E85A4F]/60 text-[#E85A4F] text-xs uppercase tracking-[0.22em] hover:bg-[#E85A4F]/10 transition-colors disabled:opacity-50"
+                    >
+                      {t('absences.reject')}
+                    </button>
+                  </div>
+                </li>
+              );
+            })}
+          </ul>
+        </div>
+      )}
+
       {/* Content area */}
       {hasError ? (
         <div className="py-12 text-center">
@@ -407,10 +504,11 @@ export default function AbsencesPage() {
           <div className="min-w-[600px]">
           {/* Table header */}
           <div className="grid items-center gap-4 px-6 py-3 border-b border-[#8E8D8A]/25 bg-[#D8C3A5]/20 text-[10px] uppercase tracking-[0.28em] text-[#6b6966]"
-            style={{ gridTemplateColumns: '2fr 1fr 1.5fr 2fr 40px' }}
+            style={{ gridTemplateColumns: '2fr 1fr 1fr 1.5fr 1.5fr 40px' }}
           >
             <div>{t('absences.colEmployee')}</div>
             <div>{t('absences.colType')}</div>
+            <div>{t('absences.colStatus')}</div>
             <div>{t('absences.colDates')}</div>
             <div>{t('absences.colNote')}</div>
             <div />
@@ -427,7 +525,7 @@ export default function AbsencesPage() {
                     'grid items-center gap-4 px-6 py-4 border-b border-[#8E8D8A]/10 last:border-0 transition-colors',
                     isDeleting ? 'opacity-40' : 'hover:bg-[#D8C3A5]/10',
                   )}
-                  style={{ gridTemplateColumns: '2fr 1fr 1.5fr 2fr 40px' }}
+                  style={{ gridTemplateColumns: '2fr 1fr 1fr 1.5fr 1.5fr 40px' }}
                 >
                   {/* Employee name */}
                   <div className="text-sm text-[#3d3b38] truncate font-medium">
@@ -439,6 +537,14 @@ export default function AbsencesPage() {
                     <TypeBadge
                       type={row.type}
                       label={typeLabels[row.type] ?? row.type}
+                    />
+                  </div>
+
+                  {/* Status badge */}
+                  <div>
+                    <StatusBadge
+                      status={row.status}
+                      label={statusLabels[row.status] ?? row.status}
                     />
                   </div>
 
