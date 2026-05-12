@@ -63,7 +63,10 @@ export const Dial: React.FC<DialProps> = ({
   const indicatorR = outerR - 13;
 
   const clamped = Math.max(0, Math.min(1, progress));
-  const rotationDeg = clamped * 360;
+  // Indicator position computed directly in viewBox coords — no rotate
+  // transform / transform-box origin tricks (those are browser-flaky).
+  const indicatorAngle = -Math.PI / 2 + clamped * TAU;
+  const indicatorPos = polar(cx, cy, indicatorR, indicatorAngle);
 
   const tickElements = React.useMemo(() => {
     const elems: React.ReactElement[] = [];
@@ -171,18 +174,11 @@ export const Dial: React.FC<DialProps> = ({
 
         <motion.g
           initial={false}
-          animate={{ rotate: rotationDeg }}
+          animate={{ x: indicatorPos.x - cx, y: indicatorPos.y - cy }}
           transition={indicatorTransition ?? { type: 'spring', stiffness: 60, damping: 18, mass: 0.8 }}
-          style={{ originX: `${cx}px`, originY: `${cy}px`, transformBox: 'view-box' }}
         >
-          <circle cx={cx} cy={cy - indicatorR} r={6} fill={COLORS[indicatorColor]} />
-          <circle
-            cx={cx}
-            cy={cy - indicatorR}
-            r={10}
-            fill={COLORS[indicatorColor]}
-            fillOpacity={0.18}
-          />
+          <circle cx={cx} cy={cy} r={10} fill={COLORS[indicatorColor]} fillOpacity={0.18} />
+          <circle cx={cx} cy={cy} r={6} fill={COLORS[indicatorColor]} />
         </motion.g>
       </svg>
 
