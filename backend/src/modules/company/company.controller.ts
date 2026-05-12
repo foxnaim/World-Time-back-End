@@ -22,6 +22,7 @@ import { CompanyService } from './company.service';
 import { CreateCompanyDto } from './dto/create-company.dto';
 import { UpdateCompanyDto } from './dto/update-company.dto';
 import { InviteEmployeeDto } from './dto/invite-employee.dto';
+import { BulkInviteDto } from './dto/bulk-invite.dto';
 import { CompanyRoleGuard, RequireRole } from './guards/company-role.guard';
 import { SeatLimitGuard } from '@/modules/billing/guards/seat-limit.guard';
 
@@ -119,6 +120,22 @@ export class CompanyController {
     @Query('limit', new DefaultValuePipe(20), ParseIntPipe) limit: number,
   ) {
     return this.activityService.recentForCompany(id, limit);
+  }
+
+  /** Generate a batch of Telegram deep-link invites in one request. */
+  @Post(':id/invites/bulk')
+  @UseGuards(SeatLimitGuard)
+  @Throttle({ default: RATE_LIMITS.TELEGRAM_INVITE })
+  @RequireRole(EmployeeRole.OWNER, EmployeeRole.MANAGER)
+  @ApiOperation({ summary: 'Generate multiple Telegram invite deep-links (OWNER/MANAGER)' })
+  @ApiResponse({ status: 201, description: 'List of generated invites returned' })
+  @ApiResponse({ status: 403, description: 'Insufficient role or seat limit reached' })
+  bulkInvite(
+    @CurrentUser() user: AuthedUser,
+    @Param('id') id: string,
+    @Body() dto: BulkInviteDto,
+  ) {
+    return this.companyService.bulkInviteEmployees(user.id, id, dto.rows);
   }
 
   /** List employees of a company. */

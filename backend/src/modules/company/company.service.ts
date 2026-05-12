@@ -229,6 +229,36 @@ export class CompanyService {
   }
 
   /**
+   * Issue a batch of Telegram deep-link invite tokens at once. Mirrors the
+   * permission checks of {@link inviteEmployee} (OWNER/MANAGER may invite;
+   * only OWNER may invite MANAGER) and delegates token creation to
+   * {@link InviteTokenService.createBulk}. Seat limits are enforced by the
+   * same `SeatLimitGuard` attached to the single-invite route.
+   */
+  async bulkInviteEmployees(
+    userId: string,
+    companyId: string,
+    rows: Array<{ name?: string; position?: string; role?: EmployeeRole }>,
+  ) {
+    const membership = await this.prisma.employee.findFirst({
+      where: { userId, companyId },
+    });
+    if (
+      !membership ||
+      (membership.role !== EmployeeRole.OWNER && membership.role !== EmployeeRole.MANAGER)
+    ) {
+      throw new ForbiddenException('Only OWNER or MANAGER can invite employees');
+    }
+
+    const wantsManager = rows.some((r) => r.role === EmployeeRole.MANAGER);
+    if (wantsManager && membership.role !== EmployeeRole.OWNER) {
+      throw new ForbiddenException('Only OWNER can invite MANAGER roles');
+    }
+
+    return this.inviteTokens.createBulk(companyId, userId, rows);
+  }
+
+  /**
    * List all employees of a company. OWNER/MANAGER only (enforced by guard).
    *
    * Returns a UI-friendly shape:
