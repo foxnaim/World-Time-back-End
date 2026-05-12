@@ -57,7 +57,10 @@ export const Dial: React.FC<DialProps> = ({
   const tickOuter = outerR - 2;
   const tickInnerShort = outerR - 14;
   const tickInnerLong = outerR - 28;
-  const indicatorR = outerR - 8;
+  // Sit the indicator dot inside the tick band (between tickOuter = outerR-2
+  // and tickInnerShort = outerR-14) so neither the dot nor its halo pokes
+  // past the outer ring.
+  const indicatorR = outerR - 13;
 
   const clamped = Math.max(0, Math.min(1, progress));
   const rotationDeg = clamped * 360;
@@ -172,11 +175,11 @@ export const Dial: React.FC<DialProps> = ({
           transition={indicatorTransition ?? { type: 'spring', stiffness: 60, damping: 18, mass: 0.8 }}
           style={{ originX: `${cx}px`, originY: `${cy}px`, transformBox: 'view-box' }}
         >
-          <circle cx={cx} cy={cy - indicatorR} r={7} fill={COLORS[indicatorColor]} />
+          <circle cx={cx} cy={cy - indicatorR} r={6} fill={COLORS[indicatorColor]} />
           <circle
             cx={cx}
             cy={cy - indicatorR}
-            r={12}
+            r={10}
             fill={COLORS[indicatorColor]}
             fillOpacity={0.18}
           />

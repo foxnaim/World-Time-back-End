@@ -10,7 +10,42 @@ import { useToast } from '@/components/ui/use-toast';
 import { EmployeesTable, type Employee } from '@/components/dashboard/company/employees-table';
 import { InviteModal } from '@/components/dashboard/company/invite-modal';
 import { EditEmployeeModal } from '@/components/dashboard/company/edit-employee-modal';
+import { Dropdown, DropdownItem } from '@/components/ui/dropdown';
 import { useLang } from '@/i18n/context';
+
+/** Pill-style filter dropdown with a real popup menu (replaces a bare <select>). */
+function FilterSelect({
+  value,
+  onChange,
+  options,
+  allLabel,
+}: {
+  value: string;
+  onChange: (v: string) => void;
+  options: { id: string; name: string }[];
+  allLabel: string;
+}) {
+  const current = options.find((o) => o.id === value);
+  return (
+    <Dropdown
+      align="left"
+      trigger={
+        <span className="inline-flex items-center gap-2 h-10 rounded-full border border-[#8E8D8A]/25 bg-transparent px-4 text-sm text-[#3d3b38] hover:border-[#E98074]/50 transition-colors">
+          {current?.name ?? allLabel}
+          <span aria-hidden className="text-[10px] text-[#8E8D8A]">▾</span>
+        </span>
+      }
+      menuClassName="max-h-64 overflow-y-auto"
+    >
+      <DropdownItem onClick={() => onChange('')}>{allLabel}</DropdownItem>
+      {options.map((o) => (
+        <DropdownItem key={o.id} onClick={() => onChange(o.id)}>
+          {o.name}
+        </DropdownItem>
+      ))}
+    </Dropdown>
+  );
+}
 
 type CompanyDetail = {
   id: string;
@@ -362,30 +397,18 @@ export default function EmployeesPage() {
 
       {/* Filter toolbar */}
       <div className="flex flex-col sm:flex-row sm:flex-wrap items-stretch sm:items-center gap-3">
-        <select
+        <FilterSelect
           value={deptFilter}
-          onChange={(e) => setDeptFilter(e.target.value)}
-          className="h-10 rounded-full border border-[#8E8D8A]/25 bg-transparent px-4 text-sm text-[#3d3b38] focus:outline-none focus:border-[#E98074]/60 transition-colors"
-        >
-          <option value="">{t('employees.filterAllDepartments')}</option>
-          {departments.map((d) => (
-            <option key={d.id} value={d.id}>
-              {d.name}
-            </option>
-          ))}
-        </select>
-        <select
+          onChange={setDeptFilter}
+          options={departments.map((d) => ({ id: d.id, name: d.name }))}
+          allLabel={t('employees.filterAllDepartments')}
+        />
+        <FilterSelect
           value={shiftFilter}
-          onChange={(e) => setShiftFilter(e.target.value)}
-          className="h-10 rounded-full border border-[#8E8D8A]/25 bg-transparent px-4 text-sm text-[#3d3b38] focus:outline-none focus:border-[#E98074]/60 transition-colors"
-        >
-          <option value="">{t('employees.filterAllShifts')}</option>
-          {shiftOptions.map((s) => (
-            <option key={s.id} value={s.id}>
-              {s.name}
-            </option>
-          ))}
-        </select>
+          onChange={setShiftFilter}
+          options={shiftOptions.map((s) => ({ id: s.id, name: s.name }))}
+          allLabel={t('employees.filterAllShifts')}
+        />
         <button
           type="button"
           onClick={() => setAbsentTodayOnly((v) => !v)}
