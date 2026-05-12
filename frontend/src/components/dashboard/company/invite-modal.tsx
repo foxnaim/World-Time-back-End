@@ -24,18 +24,31 @@ type InviteResult = {
   expiresAt: string;
 };
 
+type AssignableRole = 'STAFF' | 'MANAGER' | 'ACCOUNTANT' | 'HR';
+
+/** Role options offered in the invite selectors (OWNER is never assignable here). */
+const INVITE_ROLE_OPTIONS: readonly AssignableRole[] = ['STAFF', 'MANAGER', 'ACCOUNTANT', 'HR'];
+
+/** Map a role value to its i18n label key. */
+const ROLE_LABEL_KEY: Record<AssignableRole, string> = {
+  STAFF: 'employees.roleStaff',
+  MANAGER: 'employees.roleManager',
+  ACCOUNTANT: 'employees.roleAccountant',
+  HR: 'employees.roleHr',
+};
+
 /** One generated invite from `POST /api/companies/:id/invites/bulk`. */
 type BulkInviteResult = {
   name: string | null;
   position: string | null;
-  role: 'OWNER' | 'MANAGER' | 'STAFF';
+  role: 'OWNER' | 'MANAGER' | 'ACCOUNTANT' | 'HR' | 'STAFF';
   token: string;
   url: string;
 };
 
 type FormState = {
   position: string;
-  role: 'STAFF' | 'MANAGER';
+  role: AssignableRole;
   monthlySalary: string;
   hourlyRate: string;
 };
@@ -78,7 +91,7 @@ export function InviteModal({ companyId, open, onClose, onInvited }: InviteModal
 
   // --- bulk-invite state ---
   const [bulkText, setBulkText] = React.useState('');
-  const [bulkRole, setBulkRole] = React.useState<'STAFF' | 'MANAGER'>('STAFF');
+  const [bulkRole, setBulkRole] = React.useState<AssignableRole>('STAFF');
   const [bulkSubmitting, setBulkSubmitting] = React.useState(false);
   const [bulkError, setBulkError] = React.useState<string | null>(null);
   const [bulkResults, setBulkResults] = React.useState<BulkInviteResult[] | null>(null);
@@ -269,20 +282,20 @@ export function InviteModal({ companyId, open, onClose, onInvited }: InviteModal
 
                 <label className="flex flex-col gap-1.5">
                   <span className="text-[10px] uppercase tracking-[0.24em] text-[#6b6966]">Роль</span>
-                  <div className="flex gap-2">
-                    {(['STAFF', 'MANAGER'] as const).map((r) => (
+                  <div className="grid grid-cols-2 gap-2">
+                    {INVITE_ROLE_OPTIONS.map((r) => (
                       <button
                         key={r}
                         type="button"
                         onClick={() => update('role', r)}
                         className={cn(
-                          'flex-1 h-10 rounded-full border text-xs uppercase tracking-[0.22em] transition-colors',
+                          'h-10 rounded-full border text-xs uppercase tracking-[0.22em] transition-colors',
                           form.role === r
                             ? 'bg-[#E98074] text-[#EAE7DC] border-[#E98074]'
                             : 'border-[#8E8D8A]/30 text-[#3d3b38] hover:border-[#E98074]/50 hover:text-[#E98074]',
                         )}
                       >
-                        {r === 'STAFF' ? 'Сотрудник' : 'Менеджер'}
+                        {t(ROLE_LABEL_KEY[r])}
                       </button>
                     ))}
                   </div>
@@ -379,22 +392,20 @@ export function InviteModal({ companyId, open, onClose, onInvited }: InviteModal
                 <span className="text-[10px] uppercase tracking-[0.24em] text-[#6b6966]">
                   {t('employees.bulk.roleLabel')}
                 </span>
-                <div className="flex gap-2">
-                  {(['STAFF', 'MANAGER'] as const).map((r) => (
+                <div className="grid grid-cols-2 gap-2">
+                  {INVITE_ROLE_OPTIONS.map((r) => (
                     <button
                       key={r}
                       type="button"
                       onClick={() => setBulkRole(r)}
                       className={cn(
-                        'flex-1 h-10 rounded-full border text-xs uppercase tracking-[0.22em] transition-colors',
+                        'h-10 rounded-full border text-xs uppercase tracking-[0.22em] transition-colors',
                         bulkRole === r
                           ? 'bg-[#E98074] text-[#EAE7DC] border-[#E98074]'
                           : 'border-[#8E8D8A]/30 text-[#3d3b38] hover:border-[#E98074]/50 hover:text-[#E98074]',
                       )}
                     >
-                      {r === 'STAFF'
-                        ? t('employees.editRoleStaff')
-                        : t('employees.editRoleManager')}
+                      {t(ROLE_LABEL_KEY[r])}
                     </button>
                   ))}
                 </div>

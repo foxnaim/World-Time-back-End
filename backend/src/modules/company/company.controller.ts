@@ -103,8 +103,8 @@ export class CompanyController {
   @Post(':id/employees/invite')
   @UseGuards(SeatLimitGuard)
   @Throttle({ default: RATE_LIMITS.TELEGRAM_INVITE })
-  @RequireRole(EmployeeRole.OWNER, EmployeeRole.MANAGER)
-  @ApiOperation({ summary: 'Generate a Telegram invite deep-link (OWNER/MANAGER)' })
+  @RequireRole(EmployeeRole.OWNER, EmployeeRole.MANAGER, EmployeeRole.HR)
+  @ApiOperation({ summary: 'Generate a Telegram invite deep-link (OWNER/MANAGER/HR)' })
   @ApiResponse({ status: 201, description: 'Invite link returned' })
   @ApiResponse({ status: 403, description: 'Insufficient role' })
   invite(@CurrentUser() user: AuthedUser, @Param('id') id: string, @Body() dto: InviteEmployeeDto) {
@@ -113,8 +113,8 @@ export class CompanyController {
 
   /** Live activity feed — recent check-ins, newest first. OWNER/MANAGER. */
   @Get(':id/activity')
-  @RequireRole(EmployeeRole.OWNER, EmployeeRole.MANAGER)
-  @ApiOperation({ summary: 'Recent check-in activity for a company (OWNER/MANAGER)' })
+  @RequireRole(EmployeeRole.OWNER, EmployeeRole.MANAGER, EmployeeRole.HR)
+  @ApiOperation({ summary: 'Recent check-in activity for a company (OWNER/MANAGER/HR)' })
   @ApiQuery({ name: 'limit', required: false, description: 'Max items (1-100, default 20)' })
   @ApiResponse({ status: 200, description: 'List of recent check-ins, newest first' })
   @ApiResponse({ status: 403, description: 'Insufficient role' })
@@ -139,8 +139,8 @@ export class CompanyController {
   @Post(':id/invites/bulk')
   @UseGuards(SeatLimitGuard)
   @Throttle({ default: RATE_LIMITS.TELEGRAM_INVITE })
-  @RequireRole(EmployeeRole.OWNER, EmployeeRole.MANAGER)
-  @ApiOperation({ summary: 'Generate multiple Telegram invite deep-links (OWNER/MANAGER)' })
+  @RequireRole(EmployeeRole.OWNER, EmployeeRole.MANAGER, EmployeeRole.HR)
+  @ApiOperation({ summary: 'Generate multiple Telegram invite deep-links (OWNER/MANAGER/HR)' })
   @ApiResponse({ status: 201, description: 'List of generated invites returned' })
   @ApiResponse({ status: 403, description: 'Insufficient role or seat limit reached' })
   bulkInvite(
@@ -153,8 +153,8 @@ export class CompanyController {
 
   /** List employees of a company. Pass `?includeInactive=1` to include fired staff. */
   @Get(':id/employees')
-  @RequireRole(EmployeeRole.OWNER, EmployeeRole.MANAGER)
-  @ApiOperation({ summary: 'List employees of a company (OWNER/MANAGER)' })
+  @RequireRole(EmployeeRole.OWNER, EmployeeRole.MANAGER, EmployeeRole.ACCOUNTANT, EmployeeRole.HR)
+  @ApiOperation({ summary: 'List employees of a company (OWNER/MANAGER/ACCOUNTANT/HR)' })
   @ApiResponse({ status: 200, description: 'List of employees' })
   @ApiResponse({ status: 403, description: 'Insufficient role' })
   listEmployees(@Param('id') id: string, @Query('includeInactive') includeInactive?: string) {
@@ -178,8 +178,8 @@ export class CompanyController {
 
   /** Rich profile for a single employee. */
   @Get(':id/employees/:employeeId')
-  @RequireRole(EmployeeRole.OWNER, EmployeeRole.MANAGER)
-  @ApiOperation({ summary: 'Get a single employee profile (OWNER/MANAGER)' })
+  @RequireRole(EmployeeRole.OWNER, EmployeeRole.MANAGER, EmployeeRole.ACCOUNTANT, EmployeeRole.HR)
+  @ApiOperation({ summary: 'Get a single employee profile (OWNER/MANAGER/ACCOUNTANT/HR)' })
   @ApiResponse({ status: 200, description: 'Employee detail' })
   @ApiResponse({ status: 403, description: 'Insufficient role' })
   @ApiResponse({ status: 404, description: 'Employee not found' })
@@ -189,8 +189,8 @@ export class CompanyController {
 
   /** Update an employee's position, rate, or role. */
   @Patch(':id/employees/:employeeId')
-  @RequireRole(EmployeeRole.OWNER, EmployeeRole.MANAGER)
-  @ApiOperation({ summary: 'Update an employee (OWNER/MANAGER)' })
+  @RequireRole(EmployeeRole.OWNER, EmployeeRole.MANAGER, EmployeeRole.HR)
+  @ApiOperation({ summary: 'Update an employee (OWNER/MANAGER/HR)' })
   @ApiResponse({ status: 200, description: 'Employee updated' })
   @ApiResponse({ status: 403, description: 'Insufficient role' })
   updateEmployee(
@@ -214,10 +214,10 @@ export class CompanyController {
 
   /** Soft-delete an employee (status=INACTIVE). OWNER only. */
   @Delete(':id/employees/:employeeId')
-  @RequireRole(EmployeeRole.OWNER)
-  @ApiOperation({ summary: 'Deactivate an employee (OWNER)' })
+  @RequireRole(EmployeeRole.OWNER, EmployeeRole.HR)
+  @ApiOperation({ summary: 'Deactivate an employee (OWNER/HR)' })
   @ApiResponse({ status: 200, description: 'Employee deactivated' })
-  @ApiResponse({ status: 403, description: 'OWNER required' })
+  @ApiResponse({ status: 403, description: 'Insufficient role' })
   async deactivateEmployee(
     @CurrentUser() user: AuthedUser,
     @Param('id') id: string,

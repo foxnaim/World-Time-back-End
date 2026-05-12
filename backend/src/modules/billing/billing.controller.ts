@@ -56,10 +56,9 @@ export class BillingController {
   }
 
   /**
-   * Owner-only — returns the subscription row plus the effective tier
-   * limits. Ownership is checked against Company.ownerId directly so this
-   * endpoint stays usable even if the employee record is missing (e.g.
-   * during onboarding edge cases).
+   * Read-only billing view. Allowed for the company owner (checked against
+   * Company.ownerId directly so it stays usable even if the employee record
+   * is missing during onboarding) and for ACCOUNTANT employees.
    */
   @Get('my/:companyId')
   async mySubscription(@Param('companyId') companyId: string, @CurrentUser() user: { id: string }) {
@@ -71,7 +70,18 @@ export class BillingController {
       throw new NotFoundException('Company not found');
     }
     if (company.ownerId !== user.id) {
-      throw new ForbiddenException('Only the company owner may view billing');
+      const membership = await this.prisma.employee.findFirst({
+        where: {
+          companyId,
+          userId: user.id,
+          status: 'ACTIVE',
+          role: { in: ['OWNER', 'MANAGER', 'ACCOUNTANT'] },
+        },
+        select: { id: true },
+      });
+      if (!membership) {
+        throw new ForbiddenException('Only the company owner or an accountant may view billing');
+      }
     }
 
     let subscription = await this.billing.getSubscription(companyId);

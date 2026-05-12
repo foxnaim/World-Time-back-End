@@ -17,9 +17,11 @@ export interface EditEmployeeModalProps {
   onSaved: () => void;
 }
 
+type EmployeeRoleValue = 'OWNER' | 'MANAGER' | 'ACCOUNTANT' | 'HR' | 'STAFF';
+
 type FormState = {
   position: string;
-  role: 'OWNER' | 'MANAGER' | 'STAFF';
+  role: EmployeeRoleValue;
   monthlySalary: string;
   hourlyRate: string;
   workStartHour: string;
@@ -138,9 +140,11 @@ export function EditEmployeeModal({
               onChange={(e) => set('role', e.target.value as FormState['role'])}
               className="h-10 rounded-lg border border-[#8E8D8A]/30 bg-[#EAE7DC] px-3 text-sm text-[#3d3b38] focus:outline-none focus:border-[#E98074]/60 transition-colors"
             >
-              <option value="STAFF">{t('employees.editRoleStaff')}</option>
-              <option value="MANAGER">{t('employees.editRoleManager')}</option>
-              <option value="OWNER">{t('employees.editRoleOwner')}</option>
+              <option value="STAFF">{t('employees.roleStaff')}</option>
+              <option value="MANAGER">{t('employees.roleManager')}</option>
+              <option value="ACCOUNTANT">{t('employees.roleAccountant')}</option>
+              <option value="HR">{t('employees.roleHr')}</option>
+              <option value="OWNER">{t('employees.roleOwner')}</option>
             </select>
           </label>
 

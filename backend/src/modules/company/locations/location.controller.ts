@@ -36,7 +36,7 @@ export class LocationController {
 
   /** Create a location. OWNER or MANAGER only. */
   @Post()
-  @RequireRole(EmployeeRole.OWNER, EmployeeRole.MANAGER)
+  @RequireRole(EmployeeRole.OWNER, EmployeeRole.MANAGER, EmployeeRole.HR)
   @ApiOperation({ summary: 'Create a location (OWNER/MANAGER)' })
   @ApiResponse({ status: 201, description: 'Location created' })
   @ApiResponse({ status: 403, description: 'Insufficient role' })
@@ -50,7 +50,7 @@ export class LocationController {
 
   /** Update a location. OWNER or MANAGER only. */
   @Patch(':locationId')
-  @RequireRole(EmployeeRole.OWNER, EmployeeRole.MANAGER)
+  @RequireRole(EmployeeRole.OWNER, EmployeeRole.MANAGER, EmployeeRole.HR)
   @ApiOperation({ summary: 'Update a location (OWNER/MANAGER)' })
   @ApiResponse({ status: 200, description: 'Location updated' })
   @ApiResponse({ status: 403, description: 'Insufficient role' })
@@ -66,7 +66,7 @@ export class LocationController {
 
   /** Delete a location. OWNER or MANAGER only. */
   @Delete(':locationId')
-  @RequireRole(EmployeeRole.OWNER, EmployeeRole.MANAGER)
+  @RequireRole(EmployeeRole.OWNER, EmployeeRole.MANAGER, EmployeeRole.HR)
   @ApiOperation({ summary: 'Delete a location (OWNER/MANAGER)' })
   @ApiResponse({ status: 200, description: 'Location deleted' })
   @ApiResponse({ status: 403, description: 'Insufficient role' })

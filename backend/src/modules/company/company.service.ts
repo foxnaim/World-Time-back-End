@@ -26,6 +26,43 @@ import type { BulkUpdateEmployeesDto } from './dto/bulk-update-employees.dto';
 
 const MAX_SLUG_COLLISION_RETRIES = 5;
 
+/** Roles an actor is allowed to assign to someone else (invite / edit). */
+const ASSIGNABLE_ROLES: Record<EmployeeRole, EmployeeRole[]> = {
+  [EmployeeRole.OWNER]: [
+    EmployeeRole.OWNER,
+    EmployeeRole.MANAGER,
+    EmployeeRole.ACCOUNTANT,
+    EmployeeRole.HR,
+    EmployeeRole.STAFF,
+  ],
+  [EmployeeRole.MANAGER]: [
+    EmployeeRole.MANAGER,
+    EmployeeRole.ACCOUNTANT,
+    EmployeeRole.HR,
+    EmployeeRole.STAFF,
+  ],
+  [EmployeeRole.HR]: [
+    EmployeeRole.MANAGER,
+    EmployeeRole.ACCOUNTANT,
+    EmployeeRole.HR,
+    EmployeeRole.STAFF,
+  ],
+  [EmployeeRole.ACCOUNTANT]: [],
+  [EmployeeRole.STAFF]: [],
+};
+
+/**
+ * Throws ForbiddenException unless `actorRole` is permitted to assign
+ * `targetRole`. A MANAGER (or HR) can never grant OWNER; the last-OWNER
+ * invariant is enforced separately on demotion/removal.
+ */
+function assertAssignableRole(actorRole: EmployeeRole, targetRole: EmployeeRole): void {
+  const allowed = ASSIGNABLE_ROLES[actorRole] ?? [];
+  if (!allowed.includes(targetRole)) {
+    throw new ForbiddenException(`${actorRole} cannot assign the ${targetRole} role`);
+  }
+}
+
 /**
  * Turn an arbitrary string into a URL-safe slug.
  * Lowercase, ASCII alnum, single dashes, no leading/trailing dash.
@@ -204,21 +241,17 @@ export class CompanyService {
     const membership = await this.prisma.employee.findFirst({
       where: { userId, companyId },
     });
-    if (
-      !membership ||
-      (membership.role !== EmployeeRole.OWNER && membership.role !== EmployeeRole.MANAGER)
-    ) {
-      throw new ForbiddenException('Only OWNER or MANAGER can invite employees');
+    const inviterRoles: EmployeeRole[] = [
+      EmployeeRole.OWNER,
+      EmployeeRole.MANAGER,
+      EmployeeRole.HR,
+    ];
+    if (!membership || !inviterRoles.includes(membership.role)) {
+      throw new ForbiddenException('Only OWNER, MANAGER or HR can invite employees');
     }
 
     const role = (dto.role ?? EmployeeRole.STAFF) as EmployeeRole;
-    // Only OWNER can invite another OWNER/MANAGER.
-    if (
-      (role === EmployeeRole.OWNER || role === EmployeeRole.MANAGER) &&
-      membership.role !== EmployeeRole.OWNER
-    ) {
-      throw new ForbiddenException('Only OWNER can invite OWNER or MANAGER roles');
-    }
+    assertAssignableRole(membership.role, role);
 
     const { token, expiresAt } = await this.inviteTokens.issue({
       companyId,
@@ -250,16 +283,17 @@ export class CompanyService {
     const membership = await this.prisma.employee.findFirst({
       where: { userId, companyId },
     });
-    if (
-      !membership ||
-      (membership.role !== EmployeeRole.OWNER && membership.role !== EmployeeRole.MANAGER)
-    ) {
-      throw new ForbiddenException('Only OWNER or MANAGER can invite employees');
+    const inviterRoles: EmployeeRole[] = [
+      EmployeeRole.OWNER,
+      EmployeeRole.MANAGER,
+      EmployeeRole.HR,
+    ];
+    if (!membership || !inviterRoles.includes(membership.role)) {
+      throw new ForbiddenException('Only OWNER, MANAGER or HR can invite employees');
     }
 
-    const wantsManager = rows.some((r) => r.role === EmployeeRole.MANAGER);
-    if (wantsManager && membership.role !== EmployeeRole.OWNER) {
-      throw new ForbiddenException('Only OWNER can invite MANAGER roles');
+    for (const r of rows) {
+      assertAssignableRole(membership.role, (r.role ?? EmployeeRole.STAFF) as EmployeeRole);
     }
 
     return this.inviteTokens.createBulk(companyId, userId, rows);
@@ -559,11 +593,19 @@ export class CompanyService {
       where: { userId: actorUserId, companyId },
     });
     if (!actor) throw new NotFoundException('Company not found');
-    if (actor.role !== EmployeeRole.OWNER && actor.role !== EmployeeRole.MANAGER) {
-      throw new ForbiddenException('Only OWNER or MANAGER can modify employees');
+    const editorRoles: EmployeeRole[] = [
+      EmployeeRole.OWNER,
+      EmployeeRole.MANAGER,
+      EmployeeRole.HR,
+    ];
+    if (!editorRoles.includes(actor.role)) {
+      throw new ForbiddenException('Only OWNER, MANAGER or HR can modify employees');
     }
-    if (patch.role && actor.role !== EmployeeRole.OWNER) {
-      throw new ForbiddenException('Only OWNER can change an employee role');
+    if (patch.role) {
+      if (actor.role !== EmployeeRole.OWNER) {
+        throw new ForbiddenException('Only OWNER can change an employee role');
+      }
+      assertAssignableRole(actor.role, patch.role);
     }
 
     const target = await this.prisma.employee.findFirst({
@@ -677,15 +719,15 @@ export class CompanyService {
   }
 
   /**
-   * Soft-delete an employee by flipping status to INACTIVE. OWNER only.
+   * Soft-delete an employee by flipping status to INACTIVE. OWNER or HR.
    */
   async deactivateEmployee(actorUserId: string, companyId: string, employeeId: string) {
     const actor = await this.prisma.employee.findFirst({
       where: { userId: actorUserId, companyId },
     });
     if (!actor) throw new NotFoundException('Company not found');
-    if (actor.role !== EmployeeRole.OWNER) {
-      throw new ForbiddenException('Only OWNER can deactivate employees');
+    if (actor.role !== EmployeeRole.OWNER && actor.role !== EmployeeRole.HR) {
+      throw new ForbiddenException('Only OWNER or HR can deactivate employees');
     }
 
     const target = await this.prisma.employee.findFirst({
@@ -696,6 +738,10 @@ export class CompanyService {
       },
     });
     if (!target) throw new NotFoundException('Employee not found');
+
+    if (target.role === EmployeeRole.OWNER && actor.role !== EmployeeRole.OWNER) {
+      throw new ForbiddenException('Only an OWNER can deactivate another OWNER');
+    }
 
     if (target.role === EmployeeRole.OWNER) {
       const ownerCount = await this.prisma.employee.count({

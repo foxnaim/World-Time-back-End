@@ -27,7 +27,7 @@ type EmployeeDetail = {
   id: string;
   name: string;
   position: string | null;
-  role: 'OWNER' | 'MANAGER' | 'STAFF';
+  role: 'OWNER' | 'MANAGER' | 'ACCOUNTANT' | 'HR' | 'STAFF';
   status: 'ACTIVE' | 'INACTIVE';
   avatarUrl: string | null;
   monthlySalary: number | null;
@@ -80,8 +80,18 @@ function fmtCurrency(v: number | null | undefined, perHour = false) {
   return `${nf.format(v)}${perHour ? ' ₸/ч' : ' ₸'}`;
 }
 
+const ROLE_LABEL_KEY: Record<EmployeeDetail['role'], string> = {
+  OWNER: 'employees.roleOwner',
+  MANAGER: 'employees.roleManager',
+  ACCOUNTANT: 'employees.roleAccountant',
+  HR: 'employees.roleHr',
+  STAFF: 'employees.roleStaff',
+};
+
 function RoleBadge({ role }: { role: EmployeeDetail['role'] }) {
-  return <Badge variant="sand">{role.toLowerCase()}</Badge>;
+  const { t } = useLang();
+  const key = ROLE_LABEL_KEY[role];
+  return <Badge variant="sand">{key ? t(key) : role.toLowerCase()}</Badge>;
 }
 
 function StatusBadge({ status }: { status: EmployeeDetail['status'] }) {

@@ -28,7 +28,7 @@ export class ShiftController {
 
   /** List all shifts for a company (OWNER/MANAGER). */
   @Get()
-  @RequireRole(EmployeeRole.OWNER, EmployeeRole.MANAGER)
+  @RequireRole(EmployeeRole.OWNER, EmployeeRole.MANAGER, EmployeeRole.HR)
   @ApiOperation({ summary: 'List shifts of a company' })
   @ApiResponse({ status: 200, description: 'List of shifts with employee counts' })
   list(@Param('id') companyId: string) {
@@ -37,7 +37,7 @@ export class ShiftController {
 
   /** Create a new shift. OWNER or MANAGER only. */
   @Post()
-  @RequireRole(EmployeeRole.OWNER, EmployeeRole.MANAGER)
+  @RequireRole(EmployeeRole.OWNER, EmployeeRole.MANAGER, EmployeeRole.HR)
   @ApiOperation({ summary: 'Create a shift (OWNER/MANAGER)' })
   @ApiResponse({ status: 201, description: 'Shift created' })
   @ApiResponse({ status: 403, description: 'Insufficient role' })
@@ -51,7 +51,7 @@ export class ShiftController {
 
   /** Update a shift. OWNER or MANAGER only. */
   @Patch(':shiftId')
-  @RequireRole(EmployeeRole.OWNER, EmployeeRole.MANAGER)
+  @RequireRole(EmployeeRole.OWNER, EmployeeRole.MANAGER, EmployeeRole.HR)
   @ApiOperation({ summary: 'Update a shift (OWNER/MANAGER)' })
   @ApiResponse({ status: 200, description: 'Shift updated' })
   @ApiResponse({ status: 403, description: 'Insufficient role' })
@@ -67,7 +67,7 @@ export class ShiftController {
 
   /** Delete a shift; clears shiftId on all assigned employees. */
   @Delete(':shiftId')
-  @RequireRole(EmployeeRole.OWNER, EmployeeRole.MANAGER)
+  @RequireRole(EmployeeRole.OWNER, EmployeeRole.MANAGER, EmployeeRole.HR)
   @ApiOperation({ summary: 'Delete a shift (OWNER/MANAGER)' })
   @ApiResponse({ status: 200, description: 'Shift deleted' })
   @ApiResponse({ status: 403, description: 'Insufficient role' })
@@ -82,7 +82,7 @@ export class ShiftController {
 
   /** Assign an employee to this shift. OWNER or MANAGER only. */
   @Post(':shiftId/employees/:employeeId')
-  @RequireRole(EmployeeRole.OWNER, EmployeeRole.MANAGER)
+  @RequireRole(EmployeeRole.OWNER, EmployeeRole.MANAGER, EmployeeRole.HR)
   @ApiOperation({ summary: 'Assign an employee to a shift (OWNER/MANAGER)' })
   @ApiResponse({ status: 201, description: 'Employee assigned to shift' })
   @ApiResponse({ status: 403, description: 'Insufficient role' })

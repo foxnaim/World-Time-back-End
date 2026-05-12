@@ -58,8 +58,8 @@ export class AbsenceController {
    * Create a new absence (APPROVED immediately). OWNER or MANAGER only.
    */
   @Post()
-  @RequireRole(EmployeeRole.OWNER, EmployeeRole.MANAGER)
-  @ApiOperation({ summary: 'Create an absence record (OWNER/MANAGER)' })
+  @RequireRole(EmployeeRole.OWNER, EmployeeRole.MANAGER, EmployeeRole.HR)
+  @ApiOperation({ summary: 'Create an absence record (OWNER/MANAGER/HR)' })
   @ApiResponse({ status: 201, description: 'Absence created' })
   @ApiResponse({ status: 403, description: 'Insufficient role' })
   create(
@@ -109,8 +109,8 @@ export class AbsenceController {
    * Delete an absence. OWNER or MANAGER only.
    */
   @Delete(':absenceId')
-  @RequireRole(EmployeeRole.OWNER, EmployeeRole.MANAGER)
-  @ApiOperation({ summary: 'Delete an absence (OWNER/MANAGER)' })
+  @RequireRole(EmployeeRole.OWNER, EmployeeRole.MANAGER, EmployeeRole.HR)
+  @ApiOperation({ summary: 'Delete an absence (OWNER/MANAGER/HR)' })
   @ApiResponse({ status: 200, description: 'Deleted' })
   @ApiResponse({ status: 403, description: 'Insufficient role' })
   remove(

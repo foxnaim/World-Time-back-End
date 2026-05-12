@@ -35,8 +35,17 @@ type MeSubscription = {
 };
 
 type MeEmployee = {
-  role: 'OWNER' | 'ADMIN' | 'MANAGER' | 'EMPLOYEE' | string;
+  role: 'OWNER' | 'MANAGER' | 'ACCOUNTANT' | 'HR' | 'STAFF' | 'ADMIN' | 'EMPLOYEE' | string;
   company: { id: string; name: string; slug: string };
+};
+
+/**
+ * Sidebar items each company role is allowed to see. OWNER/MANAGER (and any
+ * unrecognised legacy role) fall through to the full list.
+ */
+const COMPANY_NAV_BY_ROLE: Record<string, string[]> = {
+  ACCOUNTANT: ['', '/reports', '/timesheet', '/payroll', '/billing'],
+  HR: ['', '/employees', '/absences'],
 };
 
 type Me = {
@@ -615,6 +624,17 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
   const activeSlug = slug ?? companies?.[0]?.slug;
   const activeCompany = companies?.find((c) => c.slug === activeSlug) ?? null;
+  // The caller's role within the currently-active company (if any), used to
+  // filter the sidebar. Falls back to undefined → full nav.
+  const activeCompanyRole = me?.employees?.find(
+    (e) => e.company.slug === activeSlug,
+  )?.role;
+  const allowedNavHrefs = activeCompanyRole
+    ? COMPANY_NAV_BY_ROLE[activeCompanyRole]
+    : undefined;
+  const visibleCompanyNav = allowedNavHrefs
+    ? COMPANY_NAV.filter((item) => allowedNavHrefs.includes(item.href))
+    : COMPANY_NAV;
   const isFreelance = pathname?.startsWith('/freelance') ?? false;
   // Sidebar-section visibility follows the user's chosen accountType. Owner
   // of a company always sees the company section too (needed for seeded
@@ -681,7 +701,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
               </Link>
             </div>
           ) : (
-            COMPANY_NAV.map((item) => {
+            visibleCompanyNav.map((item) => {
               const disabled = !activeSlug;
               const href = activeSlug ? `/company/${activeSlug}${item.href}` : '#';
               const isActive =
