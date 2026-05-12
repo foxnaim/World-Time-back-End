@@ -256,7 +256,16 @@
     "meters": "m",
     "scheduleEyebrow": "Work day",
     "scheduleTitle": "Schedule",
-    "saveFailed": "Failed to save"
+    "saveFailed": "Failed to save",
+    "penaltyEyebrow": "Discipline",
+    "penaltyTitle": "Late-arrival penalties",
+    "penaltyEnabled": "Enable late-arrival penalties",
+    "penaltyGrace": "Grace period (min)",
+    "penaltyModeFixed": "Fixed amount",
+    "penaltyModePercent": "% of daily rate",
+    "penaltyAmount": "Penalty amount",
+    "penaltyPercent": "Percent",
+    "penaltyHint": "A penalty is applied for each working day where the first check-in is later than the start of the workday plus the grace period. Holidays and approved absences are excluded."
   },
   "reports": {
     "eyebrow": "Reports",
@@ -308,7 +317,10 @@
     "noBasis": "not set",
     "totals": "Total",
     "loadError": "Failed to load payroll estimate",
-    "empty": "No active employees for this month"
+    "empty": "No active employees for this month",
+    "penaltyDays": "Late (days)",
+    "penaltyTotal": "Deductions",
+    "netPay": "Net pay"
   },
   "qr": {
     "eyebrow": "Office QR",

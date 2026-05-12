@@ -27,7 +27,17 @@ export const CreateCompanyDtoSchema = z.object({
 });
 export type CreateCompanyDto = z.infer<typeof CreateCompanyDtoSchema>;
 
-export const UpdateCompanyDtoSchema = CreateCompanyDtoSchema.partial();
+/** Late-arrival penalty configuration — editable via the company-update path. */
+export const LatePenaltyConfigSchema = z.object({
+  latePenaltyEnabled: z.boolean().optional(),
+  latePenaltyGraceMin: z.number().int().min(0).max(240).optional(),
+  latePenaltyAmount: z.number().nonnegative().nullable().optional(),
+  latePenaltyPercent: z.number().min(0).max(100).nullable().optional(),
+});
+
+export const UpdateCompanyDtoSchema = CreateCompanyDtoSchema.partial().merge(
+  LatePenaltyConfigSchema,
+);
 export type UpdateCompanyDto = z.infer<typeof UpdateCompanyDtoSchema>;
 
 export const CompanyResponseSchema = z.object({

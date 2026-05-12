@@ -2,6 +2,7 @@ import { Module } from '@nestjs/common';
 
 import { PrismaModule } from '@/common/prisma.module';
 import { AnalyticsModule } from '@/modules/analytics/analytics.module';
+import { BillingModule } from '@/modules/billing/billing.module';
 import { CompanyAdminGuard } from '@/modules/analytics/guards/company-admin.guard';
 import { CompanyRoleGuard } from '@/modules/company/guards/company-role.guard';
 
@@ -23,7 +24,7 @@ import { TimesheetService } from './timesheet.service';
  * (PrismaService, Reflector) so there's no duplicate state risk.
  */
 @Module({
-  imports: [PrismaModule, AnalyticsModule],
+  imports: [PrismaModule, AnalyticsModule, BillingModule],
   controllers: [ReportController, TimesheetController, PayrollController],
   providers: [ReportService, TimesheetService, PayrollService, CompanyAdminGuard, CompanyRoleGuard],
   exports: [ReportService, PayrollService],

@@ -24,6 +24,9 @@ type PayrollRow = {
   deltaHours: number;
   estimatedPay: number | null;
   proratedPay: number | null;
+  penaltyDays: number;
+  penaltyTotal: number;
+  netPay: number;
 };
 
 type PayrollReport = {
@@ -31,6 +34,7 @@ type PayrollReport = {
   month: number;
   workingDays: number;
   employees: PayrollRow[];
+  totals?: { penaltyTotal: number };
 };
 
 function currentYearMonth(): string {
@@ -76,6 +80,8 @@ export default function PayrollPage() {
   const totalEstimated = rows.reduce((s, r) => s + (r.estimatedPay ?? 0), 0);
   const totalExpected = rows.reduce((s, r) => s + r.expectedHours, 0);
   const totalWorked = rows.reduce((s, r) => s + r.workedHours, 0);
+  const totalPenalty = data?.totals?.penaltyTotal ?? rows.reduce((s, r) => s + (r.penaltyTotal ?? 0), 0);
+  const totalNet = rows.reduce((s, r) => s + (r.netPay ?? r.estimatedPay ?? 0), 0);
 
   function rateLabel(r: PayrollRow): string {
     if (r.basis === 'hourly' && r.hourlyRate != null) {
@@ -133,7 +139,7 @@ export default function PayrollPage() {
             </div>
           </div>
         ) : (
-          <table className="w-full min-w-[820px] border-collapse">
+          <table className="w-full min-w-[1080px] border-collapse">
             <thead>
               <tr className="border-b border-[#8E8D8A]/25 text-[10px] uppercase tracking-[0.28em] text-[#6b6966]">
                 <th className="text-left font-normal px-4 py-3">{t('payroll.colEmployee')}</th>
@@ -143,6 +149,9 @@ export default function PayrollPage() {
                 <th className="text-right font-normal px-4 py-3">{t('payroll.colWorkedHours')}</th>
                 <th className="text-right font-normal px-4 py-3">{t('payroll.colDelta')}</th>
                 <th className="text-right font-normal px-4 py-3">{t('payroll.colEstimatedPay')}</th>
+                <th className="text-right font-normal px-4 py-3">{t('payroll.penaltyDays')}</th>
+                <th className="text-right font-normal px-4 py-3">{t('payroll.penaltyTotal')}</th>
+                <th className="text-right font-normal px-4 py-3">{t('payroll.netPay')}</th>
               </tr>
             </thead>
             <tbody>
@@ -182,6 +191,17 @@ export default function PayrollPage() {
                       <span className="text-sm text-[#6b6966]">{t('payroll.noBasis')}</span>
                     )}
                   </td>
+                  <td className="px-4 py-3.5 text-right text-sm text-[#3d3b38] tabular-nums">
+                    {r.penaltyDays > 0 ? r.penaltyDays : '—'}
+                  </td>
+                  <td className="px-4 py-3.5 text-right text-sm tabular-nums text-[#E85A4F]">
+                    {r.penaltyTotal > 0 ? `− ${nf.format(r.penaltyTotal)}` : '—'}
+                  </td>
+                  <td className="px-4 py-3.5 text-right tabular-nums">
+                    <span className="text-lg" style={{ fontFamily: 'Fraunces, serif' }}>
+                      {nf.format(r.netPay ?? r.estimatedPay ?? 0)}
+                    </span>
+                  </td>
                 </tr>
               ))}
             </tbody>
@@ -200,6 +220,15 @@ export default function PayrollPage() {
                 <td className="px-4 py-3.5 text-right tabular-nums">
                   <span className="text-xl" style={{ fontFamily: 'Fraunces, serif' }}>
                     ≈ {nf.format(totalEstimated)}
+                  </span>
+                </td>
+                <td className="px-4 py-3.5" />
+                <td className="px-4 py-3.5 text-right text-sm tabular-nums text-[#E85A4F]">
+                  {totalPenalty > 0 ? `− ${nf.format(totalPenalty)}` : '—'}
+                </td>
+                <td className="px-4 py-3.5 text-right tabular-nums">
+                  <span className="text-xl" style={{ fontFamily: 'Fraunces, serif' }}>
+                    {nf.format(totalNet)}
                   </span>
                 </td>
               </tr>
