@@ -28,7 +28,7 @@ export class DepartmentController {
 
   /** List all departments for a company (any member can view). */
   @Get()
-  @RequireRole(EmployeeRole.OWNER, EmployeeRole.MANAGER)
+  @RequireRole(EmployeeRole.OWNER, EmployeeRole.MANAGER, EmployeeRole.HR)
   @ApiOperation({ summary: 'List departments of a company' })
   @ApiResponse({ status: 200, description: 'List of departments with employee counts' })
   list(@Param('id') companyId: string) {
@@ -37,7 +37,7 @@ export class DepartmentController {
 
   /** Create a new department. OWNER or MANAGER only. */
   @Post()
-  @RequireRole(EmployeeRole.OWNER, EmployeeRole.MANAGER)
+  @RequireRole(EmployeeRole.OWNER, EmployeeRole.MANAGER, EmployeeRole.HR)
   @ApiOperation({ summary: 'Create a department (OWNER/MANAGER)' })
   @ApiResponse({ status: 201, description: 'Department created' })
   @ApiResponse({ status: 403, description: 'Insufficient role' })
@@ -51,7 +51,7 @@ export class DepartmentController {
 
   /** Rename a department. OWNER or MANAGER only. */
   @Patch(':deptId')
-  @RequireRole(EmployeeRole.OWNER, EmployeeRole.MANAGER)
+  @RequireRole(EmployeeRole.OWNER, EmployeeRole.MANAGER, EmployeeRole.HR)
   @ApiOperation({ summary: 'Update a department (OWNER/MANAGER)' })
   @ApiResponse({ status: 200, description: 'Department updated' })
   @ApiResponse({ status: 403, description: 'Insufficient role' })
@@ -67,7 +67,7 @@ export class DepartmentController {
 
   /** Delete a department; clears departmentId on all assigned employees. */
   @Delete(':deptId')
-  @RequireRole(EmployeeRole.OWNER, EmployeeRole.MANAGER)
+  @RequireRole(EmployeeRole.OWNER, EmployeeRole.MANAGER, EmployeeRole.HR)
   @ApiOperation({ summary: 'Delete a department (OWNER/MANAGER)' })
   @ApiResponse({ status: 200, description: 'Department deleted' })
   @ApiResponse({ status: 403, description: 'Insufficient role' })

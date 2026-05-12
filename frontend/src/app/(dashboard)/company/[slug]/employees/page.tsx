@@ -7,7 +7,7 @@ import { Button, Card, cn } from '@tact/ui';
 import { fetcher } from '@/lib/fetcher';
 import { api } from '@/lib/api';
 import { useToast } from '@/components/ui/use-toast';
-import { EmployeesTable, type Employee } from '@/components/dashboard/company/employees-table';
+import { EmployeesTable, roleLabelKey, type Employee } from '@/components/dashboard/company/employees-table';
 import { InviteModal } from '@/components/dashboard/company/invite-modal';
 import { EditEmployeeModal } from '@/components/dashboard/company/edit-employee-modal';
 import { Dropdown, DropdownItem } from '@/components/ui/dropdown';
@@ -216,7 +216,7 @@ function EmployeesWithDepartments({
                 {employee.name}
               </div>
               <div className="text-[10px] uppercase tracking-[0.22em] text-[#6b6966]">
-                {employee.role.toLowerCase()}
+                {roleLabelKey(employee.role) ? t(roleLabelKey(employee.role)) : employee.role.toLowerCase()}
                 {employee.position ? ` · ${employee.position}` : ''}
               </div>
             </div>

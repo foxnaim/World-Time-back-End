@@ -31,7 +31,7 @@ type CompanyDetail = {
   };
   employees: Array<{
     id: string;
-    role: 'OWNER' | 'MANAGER' | 'STAFF';
+    role: 'OWNER' | 'MANAGER' | 'ACCOUNTANT' | 'HR' | 'STAFF';
     status: 'ACTIVE' | 'INACTIVE';
     position: string | null;
     createdAt: string;

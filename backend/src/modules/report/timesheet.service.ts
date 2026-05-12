@@ -60,7 +60,7 @@ export class TimesheetService {
   /**
    * @param companyId  target company
    * @param month      `YYYY-MM`
-   * @param requesterUserId  caller — must be an ACTIVE OWNER/MANAGER
+   * @param requesterUserId  caller — must be an ACTIVE OWNER/MANAGER/ACCOUNTANT
    */
   async getTimesheet(
     companyId: string,
@@ -77,13 +77,13 @@ export class TimesheetService {
       where: {
         companyId,
         userId: requesterUserId,
-        role: { in: ['OWNER', 'MANAGER'] },
+        role: { in: ['OWNER', 'MANAGER', 'ACCOUNTANT'] },
         status: 'ACTIVE',
       },
       select: { id: true },
     });
     if (!membership) {
-      throw new ForbiddenException('Caller is not an OWNER or MANAGER of this company');
+      throw new ForbiddenException('Caller is not an OWNER, MANAGER or ACCOUNTANT of this company');
     }
 
     const { start, end } = buildMonthRange(month);

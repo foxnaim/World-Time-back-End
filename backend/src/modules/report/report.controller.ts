@@ -14,7 +14,6 @@ import type { Request, Response } from 'express';
 
 import { EmployeeRole } from '@prisma/client';
 
-import { CompanyAdminGuard } from '@/modules/analytics/guards/company-admin.guard';
 import { CompanyRoleGuard, RequireRole } from '@/modules/company/guards/company-role.guard';
 
 import { PayrollService } from './payroll.service';
@@ -50,10 +49,11 @@ export class ReportController {
   constructor(private readonly reports: ReportService) {}
 
   /**
-   * Monthly attendance PDF for a company. OWNER/MANAGER only.
+   * Monthly attendance PDF for a company. OWNER/MANAGER/ACCOUNTANT.
    */
   @Get('company/:companyId/attendance.pdf')
-  @UseGuards(CompanyAdminGuard)
+  @UseGuards(CompanyRoleGuard)
+  @RequireRole(EmployeeRole.OWNER, EmployeeRole.MANAGER, EmployeeRole.ACCOUNTANT)
   async attendance(
     @Param('companyId') companyId: string,
     @Query('month') month: string,
@@ -112,7 +112,7 @@ export class PayrollController {
   constructor(private readonly payroll: PayrollService) {}
 
   @Get(':id/payroll')
-  @RequireRole(EmployeeRole.OWNER, EmployeeRole.MANAGER)
+  @RequireRole(EmployeeRole.OWNER, EmployeeRole.MANAGER, EmployeeRole.ACCOUNTANT)
   async getPayroll(@Param('id') companyId: string, @Query('month') month: string) {
     const m = assertMonth(month);
     return this.payroll.getPayroll(companyId, m);

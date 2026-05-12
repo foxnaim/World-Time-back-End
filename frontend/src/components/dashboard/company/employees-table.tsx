@@ -4,11 +4,31 @@ import * as React from 'react';
 import { Badge, cn } from '@tact/ui';
 import { useLang } from '@/i18n/context';
 
+export type EmployeeRoleValue = 'OWNER' | 'MANAGER' | 'ACCOUNTANT' | 'HR' | 'STAFF';
+
+/** i18n key for a given employee role; unknown roles fall back to the raw value. */
+export function roleLabelKey(role: string): string {
+  switch (role) {
+    case 'OWNER':
+      return 'employees.roleOwner';
+    case 'MANAGER':
+      return 'employees.roleManager';
+    case 'ACCOUNTANT':
+      return 'employees.roleAccountant';
+    case 'HR':
+      return 'employees.roleHr';
+    case 'STAFF':
+      return 'employees.roleStaff';
+    default:
+      return '';
+  }
+}
+
 export type Employee = {
   id: string;
   name: string;
   position?: string | null;
-  role: 'OWNER' | 'MANAGER' | 'STAFF';
+  role: EmployeeRoleValue;
   status: 'ACTIVE' | 'INACTIVE';
   monthlySalary?: number | null;
   hourlyRate?: number | null;
@@ -229,7 +249,7 @@ export function EmployeesTable({ rows, onMenu, onSelect, acting, className }: Em
                     {r.name}
                   </span>
                   <span className="block text-[10px] uppercase tracking-[0.22em] text-[#6b6966]">
-                    {r.role.toLowerCase()}
+                    {roleLabelKey(r.role) ? t(roleLabelKey(r.role)) : r.role.toLowerCase()}
                   </span>
                   {r.shift && (
                     <span className="mt-0.5 inline-flex items-center rounded-full bg-[#E98074]/15 px-2 py-0.5 text-[9px] uppercase tracking-[0.2em] text-[#E98074]">
