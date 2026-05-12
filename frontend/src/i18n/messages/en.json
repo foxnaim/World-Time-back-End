@@ -445,6 +445,10 @@
     "editRoleOwner": "Owner",
     "editSalaryLabel": "Salary ₸/mo",
     "editRateLabel": "Rate ₸/hr",
+    "workStartHour": "Workday start",
+    "workEndHour": "Workday end",
+    "workHoursInherit": "inherit",
+    "workHoursEffective": "Current schedule",
     "editSaved": "Changes saved",
     "editError": "Failed to save",
     "colName": "Name",
@@ -699,7 +703,16 @@
     "emptyTitle": "No absences",
     "emptyHint": "Add the first absence record",
     "confirmDelete": "Delete this absence record?",
-    "noEmployees": "No employees"
+    "noEmployees": "No employees",
+    "colStatus": "Status",
+    "pendingTitle": "Pending requests",
+    "approve": "Approve",
+    "reject": "Reject",
+    "statusPending": "Pending",
+    "statusApproved": "Approved",
+    "statusRejected": "Rejected",
+    "decideError": "Failed to process the request",
+    "requestSent": "Request sent for approval"
   },
   "timesheet": {
     "eyebrow": "Time tracking",

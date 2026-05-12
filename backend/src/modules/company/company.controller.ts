@@ -177,6 +177,8 @@ export class CompanyController {
       hourlyRate?: number | null;
       role?: EmployeeRole;
       departmentId?: string | null;
+      workStartHour?: number | null;
+      workEndHour?: number | null;
     },
   ) {
     return this.companyService.updateEmployee(user.id, id, employeeId, body);

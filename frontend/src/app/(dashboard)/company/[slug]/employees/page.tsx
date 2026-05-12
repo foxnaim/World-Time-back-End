@@ -51,6 +51,8 @@ type CompanyDetail = {
   id: string;
   slug: string;
   name: string;
+  workStartHour?: number;
+  workEndHour?: number;
 };
 
 type EmployeesResp = { items: Employee[] };
@@ -474,6 +476,11 @@ export default function EmployeesPage() {
         <EditEmployeeModal
           employee={editing}
           companyId={id}
+          companyWorkHours={
+            company?.workStartHour != null && company?.workEndHour != null
+              ? { start: company.workStartHour, end: company.workEndHour }
+              : null
+          }
           open={editing !== null}
           onClose={() => setEditing(null)}
           onSaved={() => mutate()}

@@ -3,6 +3,7 @@ import { Cron, CronExpression } from '@nestjs/schedule';
 import { CheckInType, EmployeeRole } from '@prisma/client';
 
 import { PrismaService } from '@/common/prisma.service';
+import { effectiveWorkHours } from '@/modules/analytics/work-hours.util';
 import { BotService } from '@/modules/telegram/bot.service';
 
 /**
@@ -83,14 +84,18 @@ export class AttendanceWatchService {
     const tz = company.timezone || 'Asia/Almaty';
     const now = new Date();
     const { hour, minute } = localHourMinute(now, tz);
+    const nowMin = hour * 60 + minute;
     const dateKey = localDateKey(now, tz);
-
-    // Only nag once the grace window (start + 30 min) has elapsed.
-    if (hour * 60 + minute <= company.workStartHour * 60 + 30) return;
 
     const employees = await this.prisma.employee.findMany({
       where: { companyId: company.id, status: 'ACTIVE', role: { not: EmployeeRole.OWNER } },
-      select: { id: true, user: { select: { firstName: true, lastName: true } } },
+      select: {
+        id: true,
+        user: { select: { firstName: true, lastName: true } },
+        workStartHour: true,
+        workEndHour: true,
+        shift: { select: { startHour: true, endHour: true } },
+      },
     });
     if (employees.length === 0) return; // skip empty companies
 
@@ -105,7 +110,13 @@ export class AttendanceWatchService {
     });
     const arrived = new Set(insToday.map((c) => c.employeeId));
 
-    const missing = employees.filter((e) => !arrived.has(e.id));
+    // Only nag an employee once *their* grace window (effective start + 30 min)
+    // has elapsed in company-local time.
+    const missing = employees.filter((e) => {
+      if (arrived.has(e.id)) return false;
+      const { start } = effectiveWorkHours(e, company);
+      return nowMin > start * 60 + 30;
+    });
     if (missing.length === 0) return;
 
     // Resolve OWNER/MANAGER telegram ids once.
@@ -141,7 +152,12 @@ export class AttendanceWatchService {
 
     const employees = await this.prisma.employee.findMany({
       where: { companyId: company.id, status: 'ACTIVE', role: { not: EmployeeRole.OWNER } },
-      select: { id: true },
+      select: {
+        id: true,
+        workStartHour: true,
+        workEndHour: true,
+        shift: { select: { startHour: true, endHour: true } },
+      },
     });
     if (employees.length === 0) {
       // Nothing meaningful to report, but mark as done so we don't re-check
@@ -166,16 +182,17 @@ export class AttendanceWatchService {
       if (!firstInByEmployee.has(ci.employeeId)) firstInByEmployee.set(ci.employeeId, ci.timestamp);
     }
 
-    const empIds = new Set(employees.map((e) => e.id));
-    const present = [...firstInByEmployee.keys()].filter((id) => empIds.has(id)).length;
+    const empById = new Map(employees.map((e) => [e.id, e]));
+    const present = [...firstInByEmployee.keys()].filter((id) => empById.has(id)).length;
     const total = employees.length;
 
-    const lateThresholdMin = company.workStartHour * 60 + 30;
     let lateCount = 0;
     for (const [empId, ts] of firstInByEmployee) {
-      if (!empIds.has(empId)) continue;
+      const emp = empById.get(empId);
+      if (!emp) continue;
+      const { start } = effectiveWorkHours(emp, company);
       const { hour: h, minute: m } = localHourMinute(ts, tz);
-      if (h * 60 + m > lateThresholdMin) lateCount += 1;
+      if (h * 60 + m > start * 60 + 30) lateCount += 1;
     }
 
     const recipients = await this.recipientsFor(company.id);

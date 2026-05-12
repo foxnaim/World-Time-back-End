@@ -8,6 +8,7 @@ import {
   isWeekend,
   localParts,
 } from '@/modules/analytics/analytics.helpers';
+import { effectiveWorkHours } from '@/modules/analytics/work-hours.util';
 
 /** Minutes of grace before an IN counts as "late" for the timesheet. */
 const LATE_GRACE_MINUTES = 30;
@@ -69,7 +70,7 @@ export class TimesheetService {
   ): Promise<TimesheetResult> {
     const company = await this.prisma.company.findUnique({
       where: { id: companyId },
-      select: { id: true, timezone: true, workStartHour: true },
+      select: { id: true, timezone: true, workStartHour: true, workEndHour: true },
     });
     if (!company) throw new NotFoundException('Company not found');
 
@@ -100,6 +101,9 @@ export class TimesheetService {
       select: {
         id: true,
         position: true,
+        workStartHour: true,
+        workEndHour: true,
+        shift: { select: { startHour: true, endHour: true } },
         user: { select: { firstName: true, lastName: true } },
         checkIns: {
           where: { type: 'IN', timestamp: { gte: start, lte: end } },
@@ -164,7 +168,8 @@ export class TimesheetService {
           );
           const { hour, minute } = localParts(firstIn.timestamp, company.timezone);
           const minutesIntoDay = hour * 60 + minute;
-          const cutoff = company.workStartHour * 60 + LATE_GRACE_MINUTES;
+          const { start } = effectiveWorkHours(emp, company);
+          const cutoff = start * 60 + LATE_GRACE_MINUTES;
           cells[String(d)] = minutesIntoDay > cutoff ? 'late' : 'present';
           continue;
         }

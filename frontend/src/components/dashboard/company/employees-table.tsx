@@ -20,6 +20,9 @@ export type Employee = {
   departmentId?: string | null;
   shiftId?: string | null;
   shift?: { id: string; name: string; startHour: number; endHour: number } | null;
+  /** Per-employee work-hours override (null = inherit from shift / company). */
+  workStartHour?: number | null;
+  workEndHour?: number | null;
 };
 
 export interface EmployeesTableProps {

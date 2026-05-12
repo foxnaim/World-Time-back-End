@@ -15,6 +15,7 @@ import {
   groupByDay,
   localParts,
 } from '@/modules/analytics/analytics.helpers';
+import { effectiveWorkHours } from '@/modules/analytics/work-hours.util';
 import { InviteTokenService } from './invite-token.service';
 import type { CreateCompanyDto } from './dto/create-company.dto';
 import type { UpdateCompanyDto } from './dto/update-company.dto';
@@ -274,7 +275,7 @@ export class CompanyService {
   async listEmployees(companyId: string, includeInactive = false) {
     const company = await this.prisma.company.findUnique({
       where: { id: companyId },
-      select: { id: true, timezone: true, workStartHour: true },
+      select: { id: true, timezone: true, workStartHour: true, workEndHour: true },
     });
     if (!company) throw new NotFoundException('Company not found');
 
@@ -336,12 +337,8 @@ export class CompanyService {
         if (!firstIn) continue;
         if (dayKey === todayKey) checkedInToday = true;
         const { hour, minute } = localParts(firstIn.timestamp, company.timezone);
-        const lateMin = computeLateMinutes(
-          hour,
-          minute,
-          company.workStartHour,
-          LATE_GRACE_MINUTES,
-        );
+        const { start } = effectiveWorkHours(emp, company);
+        const lateMin = computeLateMinutes(hour, minute, start, LATE_GRACE_MINUTES);
         if (lateMin > 0) lateCountMonth += 1;
       }
 
@@ -364,6 +361,8 @@ export class CompanyService {
         avatarUrl: emp.user.avatarUrl,
         departmentId: emp.departmentId,
         shiftId: emp.shiftId,
+        workStartHour: emp.workStartHour,
+        workEndHour: emp.workEndHour,
         shift: emp.shift
           ? { id: emp.shift.id, name: emp.shift.name, startHour: emp.shift.startHour, endHour: emp.shift.endHour }
           : null,
@@ -382,7 +381,7 @@ export class CompanyService {
   async getEmployeeDetail(companyId: string, employeeId: string) {
     const company = await this.prisma.company.findUnique({
       where: { id: companyId },
-      select: { id: true, timezone: true, workStartHour: true },
+      select: { id: true, timezone: true, workStartHour: true, workEndHour: true },
     });
     if (!company) throw new NotFoundException('Company not found');
 
@@ -399,7 +398,7 @@ export class CompanyService {
           select: { firstName: true, lastName: true, avatarUrl: true },
         },
         department: { select: { name: true } },
-        shift: { select: { name: true } },
+        shift: { select: { name: true, startHour: true, endHour: true } },
         checkIns: {
           where: { timestamp: { gte: windowStart } },
           select: { type: true, timestamp: true },
@@ -470,9 +469,8 @@ export class CompanyService {
       const firstIn = sorted.find((c) => c.type === 'IN');
       if (firstIn) {
         const { hour, minute } = localParts(firstIn.timestamp, company.timezone);
-        if (
-          computeLateMinutes(hour, minute, company.workStartHour, LATE_GRACE_MINUTES) > 0
-        ) {
+        const { start } = effectiveWorkHours(emp, company);
+        if (computeLateMinutes(hour, minute, start, LATE_GRACE_MINUTES) > 0) {
           lateCountMonth += 1;
         }
         const lastOut = [...sorted].reverse().find((c) => c.type === 'OUT');
@@ -546,6 +544,8 @@ export class CompanyService {
       role?: EmployeeRole;
       status?: EmployeeStatus;
       departmentId?: string | null;
+      workStartHour?: number | null;
+      workEndHour?: number | null;
     },
   ) {
     const actor = await this.prisma.employee.findFirst({
@@ -583,6 +583,10 @@ export class CompanyService {
         role: patch.role,
         status: patch.status,
         departmentId: patch.departmentId,
+        // `undefined` = field not present in the patch (leave as-is);
+        // an explicit `null` clears the override so it inherits again.
+        workStartHour: patch.workStartHour === undefined ? undefined : patch.workStartHour,
+        workEndHour: patch.workEndHour === undefined ? undefined : patch.workEndHour,
       },
     });
   }

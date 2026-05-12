@@ -445,6 +445,10 @@
     "editRoleOwner": "Владелец",
     "editSalaryLabel": "Оклад ₸/мес",
     "editRateLabel": "Ставка ₸/ч",
+    "workStartHour": "Начало рабочего дня",
+    "workEndHour": "Конец рабочего дня",
+    "workHoursInherit": "наследовать",
+    "workHoursEffective": "Текущий график",
     "editSaved": "Изменения сохранены",
     "editError": "Не удалось сохранить",
     "colName": "Имя",
@@ -699,7 +703,16 @@
     "emptyTitle": "Отсутствий нет",
     "emptyHint": "Добавьте первую запись об отсутствии",
     "confirmDelete": "Удалить запись об отсутствии?",
-    "noEmployees": "Нет сотрудников"
+    "noEmployees": "Нет сотрудников",
+    "colStatus": "Статус",
+    "pendingTitle": "Заявки на рассмотрении",
+    "approve": "Одобрить",
+    "reject": "Отклонить",
+    "statusPending": "Ожидает",
+    "statusApproved": "Одобрено",
+    "statusRejected": "Отклонено",
+    "decideError": "Не удалось обработать заявку",
+    "requestSent": "Заявка отправлена на согласование"
   },
   "timesheet": {
     "eyebrow": "Учёт рабочего времени",

@@ -2,6 +2,7 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { CheckInType } from '@prisma/client';
 
 import { PrismaService } from '@/common/prisma.service';
+import { effectiveWorkHours } from '@/modules/analytics/work-hours.util';
 
 /** A single item in the company live-activity feed. */
 export interface ActivityItem {
@@ -58,7 +59,7 @@ export class ActivityService {
   async recentForCompany(companyId: string, limit = 20): Promise<ActivityItem[]> {
     const company = await this.prisma.company.findUnique({
       where: { id: companyId },
-      select: { timezone: true, workStartHour: true },
+      select: { timezone: true, workStartHour: true, workEndHour: true },
     });
     if (!company) throw new NotFoundException('Company not found');
 
@@ -74,7 +75,12 @@ export class ActivityService {
         timestamp: true,
         employeeId: true,
         employee: {
-          select: { user: { select: { firstName: true, lastName: true } } },
+          select: {
+            user: { select: { firstName: true, lastName: true } },
+            workStartHour: true,
+            workEndHour: true,
+            shift: { select: { startHour: true, endHour: true } },
+          },
         },
       },
     });
@@ -84,7 +90,6 @@ export class ActivityService {
     // the earliest IN per (employee, localDate). Doing it from the same rows
     // would be wrong near the window edge, so we query just the relevant INs.
     const timeZone = company.timezone || 'Asia/Almaty';
-    const startMinute = company.workStartHour * 60 + 30;
 
     // Earliest timestamp in this batch — bound the first-IN lookup.
     const earliest = rows.reduce<Date | null>(
@@ -120,7 +125,8 @@ export class ActivityService {
         const key = `${r.employeeId}:${localDateKey(r.timestamp, timeZone)}`;
         if (firstInByKey.get(key) === r.id) {
           const { hour, minute } = localHourMinute(r.timestamp, timeZone);
-          late = hour * 60 + minute > startMinute;
+          const { start } = effectiveWorkHours(r.employee, company);
+          late = hour * 60 + minute > start * 60 + 30;
         }
       }
       return {
