@@ -646,7 +646,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const showFreelanceSection = accountType === null || accountType === 'FREELANCER';
 
   return (
-    <div className="min-h-screen bg-[#EAE7DC] text-[#3d3b38] flex">
+    <div className="h-screen bg-[#EAE7DC] text-[#3d3b38] flex overflow-hidden">
       {mobileOpen && (
         <div
           className="fixed inset-0 z-30 bg-black/40 md:hidden"
@@ -670,7 +670,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             Work Tact
           </Link>
         </div>
-        <nav className="p-4 flex flex-col gap-1">
+        <nav className="p-4 flex flex-col gap-1 flex-1 min-h-0 overflow-y-auto">
           {showCompanySection && (
           <div className="px-3 py-2 text-[10px] uppercase tracking-[0.28em] text-[#6b6966]">
             {t('dashboard.sectionCompany')}
@@ -799,8 +799,8 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         </div>
       </aside>
 
-      <div className="flex-1 flex flex-col min-w-0">
-        <header className="h-16 border-b border-[#8E8D8A]/15 px-4 md:px-8 flex items-center justify-between gap-6 sticky top-0 z-20 bg-[#EAE7DC]/90 backdrop-blur">
+      <div className="flex-1 flex flex-col min-w-0 overflow-y-auto">
+        <header className="h-16 shrink-0 border-b border-[#8E8D8A]/15 px-4 md:px-8 flex items-center justify-between gap-6 sticky top-0 z-20 bg-[#EAE7DC]/90 backdrop-blur">
           <div className="flex items-center gap-4">
             <button
               className="md:hidden p-2 text-[#3d3b38] hover:text-[#E98074]"
@@ -828,7 +828,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             <UserMenu />
           </div>
         </header>
-        <main className="flex-1 px-4 py-6 sm:px-6 sm:py-8 md:px-12 md:py-12 max-w-[1400px] w-full">
+        <main className="flex-1 px-4 py-6 sm:px-6 sm:py-8 md:px-12 md:py-12 max-w-[1400px] w-full mx-auto">
           {activeCompany && !isFreelance && pathname?.startsWith('/company/') && (
             <BillingBanner
               companyId={activeCompany.id}
