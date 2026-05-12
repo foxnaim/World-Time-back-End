@@ -5,12 +5,16 @@ import {
 } from '@nestjs/common';
 import { EmployeeRole } from '@prisma/client';
 import { PrismaService } from '@/common/prisma.service';
+import { CompanyService } from '../company.service';
 import type { CreateShiftDto } from './shift.dto';
 import type { UpdateShiftDto } from './shift.dto';
 
 @Injectable()
 export class ShiftService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly companyService: CompanyService,
+  ) {}
 
   /**
    * List all shifts for a company, annotated with the number of employees
@@ -102,6 +106,7 @@ export class ShiftService {
 
     const employee = await this.prisma.employee.findFirst({
       where: { id: employeeId, companyId },
+      include: { user: { select: { telegramId: true } } },
     });
     if (!employee) throw new NotFoundException('Employee not found');
 
@@ -110,6 +115,15 @@ export class ShiftService {
       data: { shiftId },
       select: { id: true, shiftId: true },
     });
+
+    if (employee.user.telegramId && employee.shiftId !== shiftId) {
+      void this.companyService.notifyShiftChange(
+        employee.user.telegramId,
+        employee.shiftId,
+        shiftId,
+        companyId,
+      );
+    }
 
     return { ok: true, employeeId: updated.id, shiftId: updated.shiftId };
   }
