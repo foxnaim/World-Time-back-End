@@ -7,6 +7,7 @@ import { Button, Card, cn } from '@tact/ui';
 import { fetcher } from '@/lib/fetcher';
 import { KpiCard } from '@/components/dashboard/company/kpi-card';
 import { RankingList, type RankingEntry } from '@/components/dashboard/company/ranking-list';
+import { ActivityFeed } from '@/components/dashboard/company/activity-feed';
 import { useLang } from '@/i18n/context';
 
 // ---------------------------------------------------------------------------
@@ -262,6 +263,11 @@ export default function CompanyOverviewPage() {
           retryLabel={t('overview.retryLabel')}
         />
       )}
+
+      {/* Live activity feed — polls every 30s */}
+      <section aria-label={t('overview.activityTitle')}>
+        <ActivityFeed companyId={id} />
+      </section>
 
       {/* Two column */}
       <section className="grid gap-6 lg:grid-cols-2">

@@ -389,7 +389,15 @@
     "lateMinPerOccurrence": "min/occ",
     "retryLabel": "Retry",
     "genericLoadError": "Failed to load. Try refreshing.",
-    "kpiPresentLabel": "currently in office"
+    "kpiPresentLabel": "currently in office",
+    "activityEyebrow": "Live",
+    "activityTitle": "Live activity",
+    "activityEmptyTitle": "Quiet",
+    "activityEmptyHint": "No check-ins yet",
+    "activityArrived": "{name} checked in · {time}",
+    "activityLeft": "{name} checked out · {time}",
+    "activityLateBadge": "+{n} min",
+    "activityLateBadgeGeneric": "late"
   },
   "employees": {
     "eyebrow": "Employees",

@@ -1,10 +1,23 @@
-import { Body, Controller, Delete, Get, Param, Patch, Post, UseGuards } from '@nestjs/common';
-import { ApiBearerAuth, ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
+import {
+  Body,
+  Controller,
+  DefaultValuePipe,
+  Delete,
+  Get,
+  Param,
+  ParseIntPipe,
+  Patch,
+  Post,
+  Query,
+  UseGuards,
+} from '@nestjs/common';
+import { ApiBearerAuth, ApiOperation, ApiQuery, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { EmployeeRole } from '@prisma/client';
 import { Throttle } from '@nestjs/throttler';
 import { CurrentUser } from '@/common/decorators/current-user.decorator';
 import { RATE_LIMITS } from '@/common/throttle/throttle.constants';
 import { BotService } from '@/modules/telegram/bot.service';
+import { ActivityService } from '@/modules/checkin/activity.service';
 import { CompanyService } from './company.service';
 import { CreateCompanyDto } from './dto/create-company.dto';
 import { UpdateCompanyDto } from './dto/update-company.dto';
@@ -32,6 +45,7 @@ export class CompanyController {
   constructor(
     private readonly companyService: CompanyService,
     private readonly bot: BotService,
+    private readonly activityService: ActivityService,
   ) {}
 
   /** Create a new company; caller becomes its OWNER. */
@@ -91,6 +105,20 @@ export class CompanyController {
   @ApiResponse({ status: 403, description: 'Insufficient role' })
   invite(@CurrentUser() user: AuthedUser, @Param('id') id: string, @Body() dto: InviteEmployeeDto) {
     return this.companyService.inviteEmployee(user.id, id, dto);
+  }
+
+  /** Live activity feed — recent check-ins, newest first. OWNER/MANAGER. */
+  @Get(':id/activity')
+  @RequireRole(EmployeeRole.OWNER, EmployeeRole.MANAGER)
+  @ApiOperation({ summary: 'Recent check-in activity for a company (OWNER/MANAGER)' })
+  @ApiQuery({ name: 'limit', required: false, description: 'Max items (1-100, default 20)' })
+  @ApiResponse({ status: 200, description: 'List of recent check-ins, newest first' })
+  @ApiResponse({ status: 403, description: 'Insufficient role' })
+  activity(
+    @Param('id') id: string,
+    @Query('limit', new DefaultValuePipe(20), ParseIntPipe) limit: number,
+  ) {
+    return this.activityService.recentForCompany(id, limit);
   }
 
   /** List employees of a company. */

@@ -389,7 +389,15 @@
     "lateMinPerOccurrence": "мин/раз",
     "retryLabel": "Повторить",
     "genericLoadError": "Не удалось загрузить. Попробуйте обновить.",
-    "kpiPresentLabel": "сейчас в офисе"
+    "kpiPresentLabel": "сейчас в офисе",
+    "activityEyebrow": "В реальном времени",
+    "activityTitle": "В реальном времени",
+    "activityEmptyTitle": "Тихо",
+    "activityEmptyHint": "Пока нет отметок",
+    "activityArrived": "{name} пришёл(ла) · {time}",
+    "activityLeft": "{name} ушёл(ла) · {time}",
+    "activityLateBadge": "+{n} мин",
+    "activityLateBadgeGeneric": "опоздание"
   },
   "employees": {
     "eyebrow": "Сотрудники",

@@ -389,7 +389,15 @@
     "lateMinPerOccurrence": "мин/рет",
     "retryLabel": "Қайталау",
     "genericLoadError": "Жүктеу мүмкін болмады. Жаңартып көріңіз.",
-    "kpiPresentLabel": "қазір кеңседе"
+    "kpiPresentLabel": "қазір кеңседе",
+    "activityEyebrow": "Нақты уақытта",
+    "activityTitle": "Нақты уақыттағы белсенділік",
+    "activityEmptyTitle": "Тыныш",
+    "activityEmptyHint": "Әзірге белгілеулер жоқ",
+    "activityArrived": "{name} келді · {time}",
+    "activityLeft": "{name} кетті · {time}",
+    "activityLateBadge": "+{n} мин",
+    "activityLateBadgeGeneric": "кешігу"
   },
   "employees": {
     "eyebrow": "Қызметкерлер",
