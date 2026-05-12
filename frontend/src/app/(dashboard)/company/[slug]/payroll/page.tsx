@@ -1,12 +1,16 @@
 'use client';
 
 import * as React from 'react';
+import Link from 'next/link';
 import { useParams } from 'next/navigation';
 import useSWR from 'swr';
 import { Button, Card, cn } from '@tact/ui';
 import { fetcher } from '@/lib/fetcher';
+import { api, ApiError } from '@/lib/api';
 import { MonthPicker } from '@/components/dashboard/company/month-picker';
 import { useLang } from '@/i18n/context';
+
+type ExportResp = { spreadsheetUrl?: string; url?: string };
 
 type CompanyDetail = { id: string; slug: string; name: string };
 
@@ -72,6 +76,37 @@ export default function PayrollPage() {
   const reportKey = companyId ? `/api/companies/${companyId}/payroll?month=${month}` : null;
   const { data, error, isLoading, mutate } = useSWR<PayrollReport>(reportKey, fetcher);
 
+  const [exporting, setExporting] = React.useState(false);
+  const [exportUrl, setExportUrl] = React.useState<string | null>(null);
+  const [exportErr, setExportErr] = React.useState<string | null>(null);
+  const [exportNeedsGoogle, setExportNeedsGoogle] = React.useState(false);
+
+  const runExport = async () => {
+    if (!companyId) return;
+    setExporting(true);
+    setExportErr(null);
+    setExportUrl(null);
+    setExportNeedsGoogle(false);
+    try {
+      const res = await api.post<ExportResp>('/api/sheets/payroll', { companyId, month });
+      const url = res.spreadsheetUrl ?? res.url ?? null;
+      if (!url) throw new Error(t('payroll.exportError'));
+      setExportUrl(url);
+    } catch (err: unknown) {
+      if (err instanceof ApiError && err.status === 501) {
+        setExportErr(t('reports.exportNotConfigured'));
+      } else {
+        const msg = err instanceof Error ? err.message : t('payroll.exportError');
+        if (/Google|подключить|connect/i.test(msg)) {
+          setExportNeedsGoogle(true);
+        }
+        setExportErr(msg);
+      }
+    } finally {
+      setExporting(false);
+    }
+  };
+
   const rows = data?.employees ?? [];
   const totalEstimated = rows.reduce((s, r) => s + (r.estimatedPay ?? 0), 0);
   const totalExpected = rows.reduce((s, r) => s + r.expectedHours, 0);
@@ -101,8 +136,46 @@ export default function PayrollPage() {
             {t('payroll.title')}
           </h1>
         </div>
-        <MonthPicker value={month} onChange={setMonth} />
+        <div className="flex flex-wrap items-center gap-3">
+          <MonthPicker value={month} onChange={setMonth} />
+          <Button variant="primary" onClick={runExport} disabled={exporting || !companyId}>
+            {exporting ? t('payroll.exportSheetsLoading') : t('payroll.exportSheets')}
+          </Button>
+        </div>
       </div>
+
+      {(exportUrl || exportErr) && (
+        <Card
+          className="!py-4 !px-5"
+          eyebrow={exportUrl ? t('common.done') : t('common.error')}
+        >
+          {exportUrl ? (
+            <div className="flex items-center justify-between gap-6 flex-wrap">
+              <span className="text-sm text-[#3d3b38]">{t('payroll.exportSheetsDone')}</span>
+              <a
+                href={exportUrl}
+                target="_blank"
+                rel="noreferrer"
+                className="text-sm text-[#E98074] hover:text-[#E85A4F] underline underline-offset-4"
+              >
+                {t('reports.exportOpen')}
+              </a>
+            </div>
+          ) : (
+            <div className="flex items-center justify-between gap-6 flex-wrap">
+              <span className="text-sm text-[#E85A4F]">{exportErr}</span>
+              {exportNeedsGoogle && (
+                <Link
+                  href="/profile"
+                  className="text-sm text-[#E98074] hover:text-[#E85A4F] underline underline-offset-4"
+                >
+                  {t('reports.exportConnectGoogle')}
+                </Link>
+              )}
+            </div>
+          )}
+        </Card>
+      )}
 
       <p className="text-sm text-[#6b6966] max-w-2xl leading-relaxed">
         {t('payroll.note')}

@@ -22,6 +22,7 @@ import { RATE_LIMITS } from '@/common/throttle/throttle.constants';
 import { PrismaService } from '@/common/prisma.service';
 import { SheetsService } from './sheets.service';
 import { ExportMonthSchema, type ExportMonthDto } from './dto/export-month.dto';
+import { ExportReportSchema, type ExportReportDto } from './dto/export-report.dto';
 import { normalizeLocale } from './sheets.i18n';
 
 type JwtUser = { id: string; telegramId: string };
@@ -96,6 +97,83 @@ export class SheetsController {
       `export requested company=${companyId} month=${dto.month} locale=${locale} by=${jwtUser.id}`,
     );
     return this.sheets.exportCompanyMonth(companyId, dto.month, locale);
+  }
+
+  @Post('timesheet')
+  @Throttle({ default: RATE_LIMITS.SHEETS_EXPORT })
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({
+    summary: 'Export the monthly timesheet ("Табель") to Google Sheets',
+    description:
+      'Writes a Timesheet tab to the company spreadsheet (creating it if needed). OWNER/MANAGER only.',
+  })
+  @ApiResponse({ status: 200, description: 'Export finished; spreadsheet URL returned' })
+  @ApiResponse({ status: 400, description: 'Invalid payload' })
+  @ApiResponse({ status: 403, description: 'Insufficient role' })
+  async exportTimesheet(@Req() req: Request, @Body() body: unknown) {
+    const dto = this.parseReportBody(body);
+    await this.assertCompanyAdmin(req, dto.companyId);
+    const locale = this.resolveLocale(req);
+    const jwtUser = req.user as JwtUser;
+    this.logger.log(
+      `timesheet export requested company=${dto.companyId} month=${dto.month} locale=${locale} by=${jwtUser.id}`,
+    );
+    return this.sheets.exportTimesheet(jwtUser.id, dto.companyId, dto.month, locale);
+  }
+
+  @Post('payroll')
+  @Throttle({ default: RATE_LIMITS.SHEETS_EXPORT })
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({
+    summary: 'Export the monthly payroll estimate to Google Sheets',
+    description:
+      'Writes a Payroll tab to the company spreadsheet (creating it if needed). OWNER/MANAGER only.',
+  })
+  @ApiResponse({ status: 200, description: 'Export finished; spreadsheet URL returned' })
+  @ApiResponse({ status: 400, description: 'Invalid payload' })
+  @ApiResponse({ status: 403, description: 'Insufficient role' })
+  async exportPayroll(@Req() req: Request, @Body() body: unknown) {
+    const dto = this.parseReportBody(body);
+    await this.assertCompanyAdmin(req, dto.companyId);
+    const locale = this.resolveLocale(req);
+    const jwtUser = req.user as JwtUser;
+    this.logger.log(
+      `payroll export requested company=${dto.companyId} month=${dto.month} locale=${locale} by=${jwtUser.id}`,
+    );
+    return this.sheets.exportPayroll(jwtUser.id, dto.companyId, dto.month, locale);
+  }
+
+  private parseReportBody(body: unknown): ExportReportDto {
+    const parsed = ExportReportSchema.safeParse(body);
+    if (!parsed.success) {
+      throw new BadRequestException(parsed.error.issues.map((i) => i.message).join(', '));
+    }
+    return parsed.data;
+  }
+
+  private async assertCompanyAdmin(req: Request, companyId: string): Promise<void> {
+    const jwtUser = req.user as JwtUser;
+    const employee = await this.prisma.employee.findFirst({
+      where: {
+        userId: jwtUser.id,
+        companyId,
+        status: 'ACTIVE',
+        role: { in: ['OWNER', 'MANAGER'] },
+      },
+      select: { role: true },
+    });
+    if (!employee) {
+      throw new ForbiddenException(
+        'Экспорт доступен только владельцу или менеджеру компании',
+      );
+    }
+  }
+
+  private resolveLocale(req: Request) {
+    const localeHeader =
+      (req.headers['x-locale'] as string | undefined) ??
+      this.readLocaleFromCookie(req.headers.cookie);
+    return normalizeLocale(localeHeader);
   }
 
   private readLocaleFromCookie(cookie: string | undefined): string | undefined {

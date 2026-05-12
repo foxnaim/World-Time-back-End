@@ -23,6 +23,14 @@ interface Dict {
   summaryHeaders: string[];
   typeIn: string;
   typeOut: string;
+  timesheetSheet: string;
+  timesheetEmployeeHeader: string;
+  timesheetStateGlyphs: Record<
+    'present' | 'late' | 'vacation' | 'sick' | 'dayoff' | 'trip' | 'weekend' | 'absent',
+    string
+  >;
+  payrollSheet: string;
+  payrollHeaders: string[];
 }
 
 export const SHEETS_I18N: Record<Locale, Dict> = {
@@ -52,6 +60,29 @@ export const SHEETS_I18N: Record<Locale, Dict> = {
     ],
     typeIn: 'Приход',
     typeOut: 'Уход',
+    timesheetSheet: 'Табель',
+    timesheetEmployeeHeader: 'Сотрудник',
+    timesheetStateGlyphs: {
+      present: '·',
+      late: 'О',
+      vacation: 'ОТП',
+      sick: 'Б',
+      dayoff: 'В',
+      trip: 'К',
+      weekend: '—',
+      absent: 'Н',
+    },
+    payrollSheet: 'Зарплата',
+    payrollHeaders: [
+      'Сотрудник',
+      'Должность',
+      'Ставка',
+      'Ожидаемые часы',
+      'Отработано',
+      'Δ часов',
+      'К выплате',
+      'Пропорц. оплата',
+    ],
   },
   en: {
     attendanceSheet: 'Attendance',
@@ -79,6 +110,29 @@ export const SHEETS_I18N: Record<Locale, Dict> = {
     ],
     typeIn: 'Check-in',
     typeOut: 'Check-out',
+    timesheetSheet: 'Timesheet',
+    timesheetEmployeeHeader: 'Employee',
+    timesheetStateGlyphs: {
+      present: '·',
+      late: 'L',
+      vacation: 'VAC',
+      sick: 'S',
+      dayoff: 'OFF',
+      trip: 'T',
+      weekend: '—',
+      absent: 'A',
+    },
+    payrollSheet: 'Payroll',
+    payrollHeaders: [
+      'Employee',
+      'Position',
+      'Rate',
+      'Expected Hours',
+      'Worked',
+      'Δ Hours',
+      'Estimated Pay',
+      'Prorated Pay',
+    ],
   },
   kz: {
     attendanceSheet: 'Қатысу',
@@ -106,5 +160,28 @@ export const SHEETS_I18N: Record<Locale, Dict> = {
     ],
     typeIn: 'Кіру',
     typeOut: 'Шығу',
+    timesheetSheet: 'Табель',
+    timesheetEmployeeHeader: 'Қызметкер',
+    timesheetStateGlyphs: {
+      present: '·',
+      late: 'К',
+      vacation: 'ДЕМ',
+      sick: 'А',
+      dayoff: 'БК',
+      trip: 'ІС',
+      weekend: '—',
+      absent: 'Ж',
+    },
+    payrollSheet: 'Жалақы',
+    payrollHeaders: [
+      'Қызметкер',
+      'Лауазым',
+      'Мөлшерлеме',
+      'Күтілетін сағаттар',
+      'Істелген',
+      'Δ сағат',
+      'Төленетін',
+      'Пропорц. төлем',
+    ],
   },
 };

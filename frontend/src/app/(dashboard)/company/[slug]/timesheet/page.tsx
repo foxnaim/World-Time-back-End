@@ -1,12 +1,16 @@
 'use client';
 
 import * as React from 'react';
+import Link from 'next/link';
 import { useParams } from 'next/navigation';
 import useSWR from 'swr';
-import { Card, cn } from '@tact/ui';
+import { Button, Card, cn } from '@tact/ui';
 import { fetcher } from '@/lib/fetcher';
+import { api, ApiError } from '@/lib/api';
 import { MonthPicker } from '@/components/dashboard/company/month-picker';
 import { useLang } from '@/i18n/context';
+
+type ExportResp = { spreadsheetUrl?: string; url?: string };
 
 type CompanyDetail = { id: string; slug: string; name: string };
 
@@ -100,6 +104,37 @@ export default function TimesheetPage() {
   const key = companyId ? `/api/companies/${companyId}/timesheet?month=${month}` : null;
   const { data, error, isLoading, mutate } = useSWR<Timesheet>(key, fetcher);
 
+  const [exporting, setExporting] = React.useState(false);
+  const [exportUrl, setExportUrl] = React.useState<string | null>(null);
+  const [exportErr, setExportErr] = React.useState<string | null>(null);
+  const [exportNeedsGoogle, setExportNeedsGoogle] = React.useState(false);
+
+  const runExport = async () => {
+    if (!companyId) return;
+    setExporting(true);
+    setExportErr(null);
+    setExportUrl(null);
+    setExportNeedsGoogle(false);
+    try {
+      const res = await api.post<ExportResp>('/api/sheets/timesheet', { companyId, month });
+      const url = res.spreadsheetUrl ?? res.url ?? null;
+      if (!url) throw new Error(t('timesheet.exportError'));
+      setExportUrl(url);
+    } catch (err: unknown) {
+      if (err instanceof ApiError && err.status === 501) {
+        setExportErr(t('reports.exportNotConfigured'));
+      } else {
+        const msg = err instanceof Error ? err.message : t('timesheet.exportError');
+        if (/Google|подключить|connect/i.test(msg)) {
+          setExportNeedsGoogle(true);
+        }
+        setExportErr(msg);
+      }
+    } finally {
+      setExporting(false);
+    }
+  };
+
   const dayNumbers = data ? Array.from({ length: data.days }, (_, i) => i + 1) : [];
 
   const legend: { state: CellState; label: string }[] = [
@@ -128,8 +163,46 @@ export default function TimesheetPage() {
             {t('timesheet.title')}
           </h1>
         </div>
-        <MonthPicker value={month} onChange={setMonth} />
+        <div className="flex flex-wrap items-center gap-3">
+          <MonthPicker value={month} onChange={setMonth} />
+          <Button variant="primary" onClick={runExport} disabled={exporting || !companyId}>
+            {exporting ? t('timesheet.exportSheetsLoading') : t('timesheet.exportSheets')}
+          </Button>
+        </div>
       </div>
+
+      {(exportUrl || exportErr) && (
+        <Card
+          className="!py-4 !px-5"
+          eyebrow={exportUrl ? t('common.done') : t('common.error')}
+        >
+          {exportUrl ? (
+            <div className="flex items-center justify-between gap-6 flex-wrap">
+              <span className="text-sm text-[#3d3b38]">{t('timesheet.exportSheetsDone')}</span>
+              <a
+                href={exportUrl}
+                target="_blank"
+                rel="noreferrer"
+                className="text-sm text-[#E98074] hover:text-[#E85A4F] underline underline-offset-4"
+              >
+                {t('reports.exportOpen')}
+              </a>
+            </div>
+          ) : (
+            <div className="flex items-center justify-between gap-6 flex-wrap">
+              <span className="text-sm text-[#E85A4F]">{exportErr}</span>
+              {exportNeedsGoogle && (
+                <Link
+                  href="/profile"
+                  className="text-sm text-[#E98074] hover:text-[#E85A4F] underline underline-offset-4"
+                >
+                  {t('reports.exportConnectGoogle')}
+                </Link>
+              )}
+            </div>
+          )}
+        </Card>
+      )}
 
       <Card className="!p-0 overflow-hidden">
         {error ? (
