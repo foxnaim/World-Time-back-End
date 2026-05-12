@@ -1,6 +1,7 @@
 'use client';
 
 import * as React from 'react';
+import dynamic from 'next/dynamic';
 import { useParams, useRouter } from 'next/navigation';
 import useSWR from 'swr';
 import { Button, Card, Input, cn } from '@tact/ui';
@@ -8,6 +9,12 @@ import { fetcher } from '@/lib/fetcher';
 import { api } from '@/lib/api';
 import { useToast } from '@/components/ui/use-toast';
 import { useLang } from '@/i18n/context';
+
+// Leaflet touches `window`, so the map must be client-only (no SSR).
+const GeofenceMap = dynamic(
+  () => import('@/components/dashboard/company/geofence-map'),
+  { ssr: false },
+);
 
 // ---------------------------------------------------------------------------
 // Location types
@@ -560,6 +567,12 @@ export default function SettingsPage() {
   const swrKey = slug ? `/api/companies/${slug}` : null;
   const { data, mutate, error, isLoading } = useSWR<CompanyDetail>(swrKey, fetcher);
 
+  // Saved locations — used to draw read-only geofence circles on the map.
+  const { data: locations } = useSWR<Location[]>(
+    data?.id ? `/api/companies/${data.id}/locations` : null,
+    fetcher,
+  );
+
   const [form, setForm] = React.useState<CompanyDetail | null>(null);
   const [saving, setSaving] = React.useState(false);
   const [saveErr, setSaveErr] = React.useState<string | null>(null);
@@ -732,9 +745,6 @@ export default function SettingsPage() {
               placeholder="76.889709"
             />
           </label>
-          <div className="text-[11px] uppercase tracking-[0.22em] text-[#6b6966] self-end pb-3">
-            {t('settings.mapPlaceholder')}
-          </div>
         </div>
 
         <div className="mt-6">
@@ -776,6 +786,30 @@ export default function SettingsPage() {
             <span>20 {t('settings.meters')}</span>
             <span>2000 {t('settings.meters')}</span>
           </div>
+        </div>
+
+        {/* Interactive map — two-way synced with the lat/lng inputs above. */}
+        <div className="mt-6">
+          <GeofenceMap
+            value={
+              form.latitude != null && form.longitude != null
+                ? { lat: form.latitude, lng: form.longitude }
+                : null
+            }
+            radiusM={radius}
+            onChange={({ lat, lng }) => {
+              update('latitude', lat);
+              update('longitude', lng);
+            }}
+            locations={(locations ?? []).map((l) => ({
+              id: l.id,
+              name: l.name,
+              latitude: l.latitude,
+              longitude: l.longitude,
+              geofenceRadiusM: l.geofenceRadiusM,
+            }))}
+          />
+          <div className="mt-2 text-[11px] text-[#8E8D8A]">{t('settings.mapHint')}</div>
         </div>
       </Card>
 
