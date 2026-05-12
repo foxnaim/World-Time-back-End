@@ -53,14 +53,14 @@ export const Dial: React.FC<DialProps> = ({
 }) => {
   const cx = size / 2;
   const cy = size / 2;
-  const outerR = size / 2 - 4;
+  // Leave 16px of margin to the viewBox edge so the indicator dot can ride
+  // ON the ring line with its halo without clipping.
+  const outerR = size / 2 - 16;
   const tickOuter = outerR - 2;
   const tickInnerShort = outerR - 14;
   const tickInnerLong = outerR - 28;
-  // Sit the indicator dot inside the tick band (between tickOuter = outerR-2
-  // and tickInnerShort = outerR-14) so neither the dot nor its halo pokes
-  // past the outer ring.
-  const indicatorR = outerR - 13;
+  // The indicator dot sits exactly on the ring line.
+  const indicatorR = outerR;
 
   const clamped = Math.max(0, Math.min(1, progress));
   // Indicator position computed directly in viewBox coords — no rotate
@@ -177,8 +177,8 @@ export const Dial: React.FC<DialProps> = ({
           animate={{ x: indicatorPos.x - cx, y: indicatorPos.y - cy }}
           transition={indicatorTransition ?? { type: 'spring', stiffness: 60, damping: 18, mass: 0.8 }}
         >
-          <circle cx={cx} cy={cy} r={10} fill={COLORS[indicatorColor]} fillOpacity={0.18} />
-          <circle cx={cx} cy={cy} r={6} fill={COLORS[indicatorColor]} />
+          <circle cx={cx} cy={cy} r={9} fill={COLORS[indicatorColor]} fillOpacity={0.2} />
+          <circle cx={cx} cy={cy} r={5} fill={COLORS[indicatorColor]} />
         </motion.g>
       </svg>
 
