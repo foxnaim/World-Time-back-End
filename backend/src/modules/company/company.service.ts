@@ -2,6 +2,7 @@ import {
   ConflictException,
   ForbiddenException,
   Injectable,
+  Logger,
   NotFoundException,
 } from '@nestjs/common';
 import { EmployeeRole, EmployeeStatus, Prisma } from '@prisma/client';
@@ -9,6 +10,7 @@ import { createId } from '@paralleldrive/cuid2';
 import { PrismaService } from '@/common/prisma.service';
 import { AuditService } from '@/modules/audit/audit.service';
 import { BillingService } from '@/modules/billing/billing.service';
+import { BotService } from '@/modules/telegram/bot.service';
 import {
   LATE_GRACE_MINUTES,
   computeLateMinutes,
@@ -38,11 +40,14 @@ function slugify(input: string): string {
 
 @Injectable()
 export class CompanyService {
+  private readonly logger = new Logger(CompanyService.name);
+
   constructor(
     private readonly prisma: PrismaService,
     private readonly inviteTokens: InviteTokenService,
     private readonly billing: BillingService,
     private readonly audit: AuditService,
+    private readonly bot: BotService,
   ) {}
 
   /**
@@ -546,6 +551,7 @@ export class CompanyService {
       role?: EmployeeRole;
       status?: EmployeeStatus;
       departmentId?: string | null;
+      shiftId?: string | null;
     },
   ) {
     const actor = await this.prisma.employee.findFirst({
@@ -561,6 +567,7 @@ export class CompanyService {
 
     const target = await this.prisma.employee.findFirst({
       where: { id: employeeId, companyId },
+      include: { user: { select: { telegramId: true } } },
     });
     if (!target) throw new NotFoundException('Employee not found');
 
@@ -574,7 +581,7 @@ export class CompanyService {
       }
     }
 
-    return this.prisma.employee.update({
+    const updated = await this.prisma.employee.update({
       where: { id: employeeId },
       data: {
         position: patch.position,
@@ -583,8 +590,85 @@ export class CompanyService {
         role: patch.role,
         status: patch.status,
         departmentId: patch.departmentId,
+        shiftId: patch.shiftId,
       },
     });
+
+    const telegramId = target.user.telegramId;
+    if (telegramId) {
+      if (patch.shiftId !== undefined && patch.shiftId !== target.shiftId) {
+        void this.notifyShiftChange(telegramId, target.shiftId, patch.shiftId, companyId);
+      }
+      if (patch.departmentId !== undefined && patch.departmentId !== target.departmentId) {
+        void this.notifyDepartmentChange(telegramId, target.departmentId, patch.departmentId, companyId);
+      }
+    }
+
+    return updated;
+  }
+
+  /**
+   * Fire-and-forget Telegram DM about a shift (re)assignment / clearing.
+   * Never throws — failures are logged and swallowed.
+   */
+  async notifyShiftChange(
+    telegramId: bigint | string | number,
+    oldShiftId: string | null,
+    newShiftId: string | null,
+    companyId: string,
+  ): Promise<void> {
+    try {
+      const pad = (n: number) => String(n).padStart(2, '0');
+      if (newShiftId) {
+        const shift = await this.prisma.shift.findFirst({
+          where: { id: newShiftId, companyId },
+          select: { name: true, startHour: true, endHour: true },
+        });
+        if (!shift) return;
+        await this.bot.notifyUser(
+          telegramId,
+          `🗂 Тебя назначили в смену «${shift.name}» (${pad(shift.startHour)}:00–${pad(shift.endHour)}:00)`,
+        );
+      } else if (oldShiftId) {
+        const shift = await this.prisma.shift.findFirst({
+          where: { id: oldShiftId },
+          select: { name: true },
+        });
+        await this.bot.notifyUser(telegramId, `🗂 Тебя сняли со смены «${shift?.name ?? '—'}»`);
+      }
+    } catch (e) {
+      this.logger.warn(`assignment notify failed: ${(e as Error).message}`);
+    }
+  }
+
+  /**
+   * Fire-and-forget Telegram DM about a department transfer / clearing.
+   * Never throws — failures are logged and swallowed.
+   */
+  async notifyDepartmentChange(
+    telegramId: bigint | string | number,
+    oldDepartmentId: string | null,
+    newDepartmentId: string | null,
+    companyId: string,
+  ): Promise<void> {
+    try {
+      if (newDepartmentId) {
+        const dept = await this.prisma.department.findFirst({
+          where: { id: newDepartmentId, companyId },
+          select: { name: true },
+        });
+        if (!dept) return;
+        await this.bot.notifyUser(telegramId, `🏢 Тебя перевели в отдел «${dept.name}»`);
+      } else if (oldDepartmentId) {
+        const dept = await this.prisma.department.findFirst({
+          where: { id: oldDepartmentId },
+          select: { name: true },
+        });
+        await this.bot.notifyUser(telegramId, `🏢 Тебя сняли с отдела «${dept?.name ?? '—'}»`);
+      }
+    } catch (e) {
+      this.logger.warn(`assignment notify failed: ${(e as Error).message}`);
+    }
   }
 
   /**

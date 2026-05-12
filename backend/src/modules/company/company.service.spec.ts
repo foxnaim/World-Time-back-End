@@ -50,7 +50,13 @@ describe('CompanyService', () => {
 
   beforeEach(() => {
     prisma = makePrisma();
-    service = new CompanyService(prisma as any, inviteTokens, {} as any, { record: jest.fn() } as any);
+    service = new CompanyService(
+      prisma as any,
+      inviteTokens,
+      {} as any,
+      { record: jest.fn() } as any,
+      { notifyUser: jest.fn() } as any,
+    );
   });
 
   describe('create', () => {

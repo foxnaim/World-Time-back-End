@@ -177,6 +177,7 @@ export class CompanyController {
       hourlyRate?: number | null;
       role?: EmployeeRole;
       departmentId?: string | null;
+      shiftId?: string | null;
     },
   ) {
     return this.companyService.updateEmployee(user.id, id, employeeId, body);
