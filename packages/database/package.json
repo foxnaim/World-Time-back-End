@@ -22,7 +22,7 @@
     "seed": "tsx src/seed.ts"
   },
   "dependencies": {
-    "@prisma/client": "^5.22.0"
+    "@prisma/client": "^7.7.0"
   },
   "devDependencies": {
     "@types/node": "^22.19.17",
