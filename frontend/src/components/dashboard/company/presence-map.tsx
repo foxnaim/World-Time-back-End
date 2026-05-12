@@ -61,12 +61,10 @@ export default function PresenceMap({ markers, center, className }: PresenceMapP
         center={resolvedCenter}
         zoom={14}
         scrollWheelZoom={false}
+        attributionControl={false}
         style={{ height: 280, width: '100%' }}
       >
-        <TileLayer
-          attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-          url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-        />
+        <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
         {markers.map((m) => (
           <Marker key={m.employeeId} position={[m.lat, m.lng]} icon={DEFAULT_ICON}>
             <Popup>{m.name}</Popup>
