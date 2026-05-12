@@ -256,7 +256,12 @@
     "meters": "m",
     "scheduleEyebrow": "Work day",
     "scheduleTitle": "Schedule",
-    "saveFailed": "Failed to save"
+    "saveFailed": "Failed to save",
+    "holidaysTitle": "Holidays & non-working days",
+    "holidayDate": "Date",
+    "holidayName": "Name",
+    "holidayAdd": "Add",
+    "holidaysEmpty": "No holidays added yet"
   },
   "reports": {
     "eyebrow": "Reports",
@@ -731,6 +736,7 @@
     "legendSick": "Sick leave",
     "legendDayoff": "Day off",
     "legendTrip": "Business trip",
+    "legendHoliday": "Holiday",
     "legendWeekend": "Weekend",
     "legendAbsent": "Absent"
   }

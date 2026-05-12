@@ -88,7 +88,19 @@ export class PayrollService {
     const year = Number(yearStr);
     const monthNum = Number(monthStr);
 
-    const workingDays = countWorkingDays(year, monthNum - 1);
+    // Company holidays falling on a Mon–Fri within this month reduce the
+    // working-day count (and therefore expected hours / salary pro-rating).
+    const holidayRows = await this.prisma.holiday.findMany({
+      where: { companyId: company.id, date: { gte: start, lte: end } },
+      select: { date: true },
+    });
+    let holidaysOnWeekdays = 0;
+    for (const h of holidayRows) {
+      const wd = h.date.getUTCDay();
+      if (wd !== 0 && wd !== 6) holidaysOnWeekdays += 1;
+    }
+
+    const workingDays = Math.max(0, countWorkingDays(year, monthNum - 1) - holidaysOnWeekdays);
     const hoursPerDay = Math.max(0, company.workEndHour - company.workStartHour);
     const expectedHours = round1(workingDays * hoursPerDay);
 

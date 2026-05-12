@@ -17,6 +17,7 @@ type CellState =
   | 'sick'
   | 'dayoff'
   | 'trip'
+  | 'holiday'
   | 'weekend'
   | 'absent';
 
@@ -55,6 +56,11 @@ const STATE_STYLE: Record<
   sick: { glyph: '🤒', cellClass: 'bg-[#D8C3A5]/30', glyphClass: '' },
   dayoff: { glyph: 'В', cellClass: 'bg-[#D8C3A5]/25', glyphClass: 'text-xs text-[#6b6966]' },
   trip: { glyph: '✈', cellClass: 'bg-[#D8C3A5]/25', glyphClass: 'text-[#6b6966]' },
+  holiday: {
+    glyph: 'П',
+    cellClass: 'bg-[#E98074]/12',
+    glyphClass: 'text-xs text-[#E98074]',
+  },
   weekend: { glyph: '', cellClass: 'bg-[#8E8D8A]/10', glyphClass: '' },
   absent: { glyph: '', cellClass: 'bg-[#E85A4F]/12', glyphClass: '' },
 };
@@ -103,6 +109,7 @@ export default function TimesheetPage() {
     { state: 'sick', label: t('timesheet.legendSick') },
     { state: 'dayoff', label: t('timesheet.legendDayoff') },
     { state: 'trip', label: t('timesheet.legendTrip') },
+    { state: 'holiday', label: t('timesheet.legendHoliday') },
     { state: 'weekend', label: t('timesheet.legendWeekend') },
     { state: 'absent', label: t('timesheet.legendAbsent') },
   ];

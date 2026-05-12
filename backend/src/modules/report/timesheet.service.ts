@@ -20,6 +20,7 @@ export type TimesheetCellState =
   | 'sick'
   | 'dayoff'
   | 'trip'
+  | 'holiday'
   | 'weekend'
   | 'absent';
 
@@ -118,6 +119,13 @@ export class TimesheetService {
       orderBy: { createdAt: 'asc' },
     });
 
+    // Company holidays falling within this month → set of `YYYY-MM-DD` keys.
+    const holidayRows = await this.prisma.holiday.findMany({
+      where: { companyId, date: { gte: start, lte: end } },
+      select: { date: true },
+    });
+    const holidayKeys = new Set(holidayRows.map((h) => h.date.toISOString().slice(0, 10)));
+
     const dayKeyFmt = new Intl.DateTimeFormat('en-CA', {
       timeZone: company.timezone,
       year: 'numeric',
@@ -174,9 +182,14 @@ export class TimesheetService {
           continue;
         }
 
-        // No attendance, no leave — Sat/Sun is a weekend, anything else an
-        // unexplained absence. Use UTC noon so the weekday of the calendar
-        // date is unambiguous regardless of the server's local zone.
+        // No attendance, no leave — a company holiday wins over the weekend /
+        // unexplained-absence classification. Otherwise Sat/Sun is a weekend,
+        // anything else an unexplained absence. Use UTC noon so the weekday of
+        // the calendar date is unambiguous regardless of the server's zone.
+        if (holidayKeys.has(key)) {
+          cells[String(d)] = 'holiday';
+          continue;
+        }
         const weekday = new Date(`${key}T12:00:00Z`).getUTCDay();
         cells[String(d)] = isWeekend(weekday) ? 'weekend' : 'absent';
       }

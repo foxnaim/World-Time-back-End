@@ -256,7 +256,12 @@
     "meters": "м",
     "scheduleEyebrow": "Рабочий день",
     "scheduleTitle": "График",
-    "saveFailed": "Не удалось сохранить"
+    "saveFailed": "Не удалось сохранить",
+    "holidaysTitle": "Праздники и нерабочие дни",
+    "holidayDate": "Дата",
+    "holidayName": "Название",
+    "holidayAdd": "Добавить",
+    "holidaysEmpty": "Праздники пока не добавлены"
   },
   "reports": {
     "eyebrow": "Отчёты",
@@ -731,6 +736,7 @@
     "legendSick": "Больничный",
     "legendDayoff": "Отгул",
     "legendTrip": "Командировка",
+    "legendHoliday": "Праздник",
     "legendWeekend": "Выходной",
     "legendAbsent": "Отсутствие"
   }
