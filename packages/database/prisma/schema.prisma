@@ -32,27 +32,47 @@ enum UserAccountType {
 }
 
 model Company {
-  id              String        @id @default(cuid())
-  name            String
-  slug            String        @unique
-  owner           User          @relation(fields: [ownerId], references: [id])
-  ownerId         String
-  address         String?
-  latitude        Float?
-  longitude       Float?
-  geofenceRadiusM Int           @default(150)
-  timezone        String        @default("Asia/Almaty")
-  workStartHour   Int           @default(9)
-  workEndHour     Int           @default(18)
-  createdAt       DateTime      @default(now())
-  updatedAt       DateTime      @updatedAt
-  employees       Employee[]
-  qrTokens        QRToken[]
-  inviteTokens    InviteToken[]
-  subscription    Subscription?
-  departments     Department[]
-  locations       Location[]
-  shifts          Shift[]
+  id                  String        @id @default(cuid())
+  name                String
+  slug                String        @unique
+  owner               User          @relation(fields: [ownerId], references: [id])
+  ownerId             String
+  address             String?
+  latitude            Float?
+  longitude           Float?
+  geofenceRadiusM     Int           @default(150)
+  timezone            String        @default("Asia/Almaty")
+  workStartHour       Int           @default(9)
+  workEndHour         Int           @default(18)
+  // Late-arrival penalty config. When enabled, an IN check-in later than
+  // (workStartHour + latePenaltyGraceMin) on a working day incurs a penalty:
+  // a fixed `latePenaltyAmount` OR `latePenaltyPercent` of the day's rate.
+  latePenaltyEnabled  Boolean       @default(false)
+  latePenaltyGraceMin Int           @default(15)
+  latePenaltyAmount   Decimal?      @db.Decimal(10, 2)
+  latePenaltyPercent  Float?
+  createdAt           DateTime      @default(now())
+  updatedAt           DateTime      @updatedAt
+  employees           Employee[]
+  qrTokens            QRToken[]
+  inviteTokens        InviteToken[]
+  subscription        Subscription?
+  departments         Department[]
+  locations           Location[]
+  shifts              Shift[]
+  holidays            Holiday[]
+}
+
+model Holiday {
+  id        String   @id @default(cuid())
+  company   Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  companyId String
+  date      DateTime @db.Date
+  name      String
+  createdAt DateTime @default(now())
+
+  @@unique([companyId, date])
+  @@index([companyId])
 }
 
 model Subscription {
@@ -116,6 +136,10 @@ model Employee {
   hourlyRate    Decimal?       @db.Decimal(10, 2)
   status        EmployeeStatus @default(ACTIVE)
   role          EmployeeRole   @default(STAFF)
+  // Optional per-employee override of the working-day window. Falls back to
+  // the assigned shift's hours, then the company's workStartHour/workEndHour.
+  workStartHour Int?
+  workEndHour   Int?
   createdAt     DateTime       @default(now())
   checkIns      CheckIn[]
   departmentId  String?
@@ -142,14 +166,14 @@ model CheckIn {
 }
 
 model QRToken {
-  id               String   @id @default(cuid())
-  company          Company  @relation(fields: [companyId], references: [id])
+  id               String    @id @default(cuid())
+  company          Company   @relation(fields: [companyId], references: [id])
   companyId        String
-  token            String   @unique
+  token            String    @unique
   expiresAt        DateTime
   usedByEmployeeId String?
   usedAt           DateTime?
-  createdAt        DateTime @default(now())
+  createdAt        DateTime  @default(now())
 
   @@index([companyId, expiresAt])
 }
@@ -209,6 +233,8 @@ enum EmployeeStatus {
 enum EmployeeRole {
   OWNER
   MANAGER
+  ACCOUNTANT
+  HR
   STAFF
 }
 
@@ -226,14 +252,14 @@ enum ProjectStatus {
 /// Append-only audit trail. System actions (no actor) and cross-company events
 /// keep their FKs nullable so we can still record deletions without cascading.
 model AuditEntry {
-  id           String   @id @default(cuid())
-  actorUserId  String?
-  companyId    String?
-  action       String
-  targetType   String
-  targetId     String?
-  metadata     Json
-  createdAt    DateTime @default(now())
+  id          String   @id @default(cuid())
+  actorUserId String?
+  companyId   String?
+  action      String
+  targetType  String
+  targetId    String?
+  metadata    Json
+  createdAt   DateTime @default(now())
 
   @@index([companyId, createdAt])
   @@index([actorUserId, createdAt])
@@ -278,18 +304,20 @@ model Shift {
 }
 
 model Absence {
-  id           String      @id @default(cuid())
-  employee     Employee    @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+  id           String        @id @default(cuid())
+  employee     Employee      @relation(fields: [employeeId], references: [id], onDelete: Cascade)
   employeeId   String
   type         AbsenceType
+  status       AbsenceStatus @default(APPROVED)
   startDate    DateTime
   endDate      DateTime
   note         String?
   approvedById String?
-  createdAt    DateTime    @default(now())
+  createdAt    DateTime      @default(now())
 
   @@index([employeeId])
   @@index([employeeId, startDate])
+  @@index([employeeId, status])
 }
 
 enum AbsenceType {
@@ -297,4 +325,10 @@ enum AbsenceType {
   SICK_LEAVE
   DAY_OFF
   BUSINESS_TRIP
+}
+
+enum AbsenceStatus {
+  PENDING
+  APPROVED
+  REJECTED
 }
