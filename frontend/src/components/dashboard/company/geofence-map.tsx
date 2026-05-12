@@ -13,17 +13,19 @@ import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 
 // ---------------------------------------------------------------------------
-// Fix the classic broken default-marker-icon issue (Webpack/Next mangles the
-// relative image URLs Leaflet ships with). Point the default icon at the CDN.
+// Leaflet's default marker icon ships as relative PNGs that Webpack/Next mangle,
+// and loading them from a CDN trips the app's CSP. Use a self-contained CSS pin
+// (a coral teardrop) via L.divIcon — no external requests.
 // ---------------------------------------------------------------------------
-const DEFAULT_ICON = L.icon({
-  iconUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png',
-  iconRetinaUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png',
-  shadowUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png',
-  iconSize: [25, 41],
-  iconAnchor: [12, 41],
-  popupAnchor: [1, -34],
-  shadowSize: [41, 41],
+const DEFAULT_ICON = L.divIcon({
+  className: 'wt-map-pin',
+  html:
+    '<span style="display:block;width:18px;height:18px;border-radius:50% 50% 50% 0;' +
+    'background:#E85A4F;border:2px solid #EAE7DC;transform:rotate(-45deg);' +
+    'box-shadow:0 1px 4px rgba(0,0,0,.3)"></span>',
+  iconSize: [18, 18],
+  iconAnchor: [9, 18],
+  popupAnchor: [0, -16],
 });
 
 export type LatLng = { lat: number; lng: number };

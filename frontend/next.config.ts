@@ -29,7 +29,7 @@ const csp = [
   "default-src 'self'",
   scriptSrc,
   "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
-  "img-src 'self' data: blob: https://t.me https://*.telegram.org",
+  "img-src 'self' data: blob: https://t.me https://*.telegram.org https://*.tile.openstreetmap.org https://tile.openstreetmap.org",
   "font-src 'self' data: https://fonts.gstatic.com",
   connectSrc,
   isProd
