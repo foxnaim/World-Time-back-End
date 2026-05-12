@@ -65,6 +65,30 @@ export const InviteEmployeeDtoSchema = z
   });
 export type InviteEmployeeDto = z.infer<typeof InviteEmployeeDtoSchema>;
 
+/** A single row of a bulk-invite request. */
+export const BulkInviteRowSchema = z.object({
+  name: z.string().min(1).max(120).optional(),
+  position: z.string().min(1).max(120).optional(),
+  role: z.enum(['MANAGER', 'STAFF']).optional(),
+});
+export type BulkInviteRow = z.infer<typeof BulkInviteRowSchema>;
+
+/** Body for `POST /api/companies/:id/invites/bulk`. */
+export const BulkInviteDtoSchema = z.object({
+  rows: z.array(BulkInviteRowSchema).min(1).max(100),
+});
+export type BulkInviteDto = z.infer<typeof BulkInviteDtoSchema>;
+
+/** One generated invite returned by the bulk endpoint. */
+export const BulkInviteResultSchema = z.object({
+  name: z.string().nullable(),
+  position: z.string().nullable(),
+  role: EmployeeRoleSchema,
+  token: z.string(),
+  url: z.string(),
+});
+export type BulkInviteResult = z.infer<typeof BulkInviteResultSchema>;
+
 export const EmployeeResponseSchema = z.object({
   id: z.string().uuid(),
   companyId: z.string().uuid(),

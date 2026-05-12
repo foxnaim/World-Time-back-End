@@ -73,6 +73,66 @@ export class InviteTokenService {
   }
 
   /**
+   * Issue a batch of invite tokens in one call — used by the bulk-invite
+   * endpoint. Each row reuses {@link issue} (no token generation is
+   * duplicated) and the returned `url` mirrors the Telegram deep-link shape
+   * the single-invite path returns (`CompanyService.inviteEmployee`).
+   *
+   * Caps at 100 rows. Seat limits are enforced upstream by the same
+   * `SeatLimitGuard` used on the single-invite route — bulk does not bypass
+   * them.
+   */
+  async createBulk(
+    companyId: string,
+    invitedByUserId: string,
+    rows: Array<{ name?: string; position?: string; role?: EmployeeRole }>,
+  ): Promise<
+    Array<{
+      name: string | null;
+      position: string | null;
+      role: EmployeeRole;
+      token: string;
+      url: string;
+    }>
+  > {
+    if (!Array.isArray(rows) || rows.length === 0) {
+      throw new BadRequestException('Нужна хотя бы одна строка.');
+    }
+    if (rows.length > 100) {
+      throw new BadRequestException('За один раз можно создать не более 100 приглашений.');
+    }
+
+    const botUsername = process.env.TELEGRAM_BOT_USERNAME ?? 'worktact_bot';
+    const out: Array<{
+      name: string | null;
+      position: string | null;
+      role: EmployeeRole;
+      token: string;
+      url: string;
+    }> = [];
+
+    for (const row of rows) {
+      const role = (row.role ?? EmployeeRole.STAFF) as EmployeeRole;
+      const position = row.position?.trim() || null;
+      const { token } = await this.issue({
+        companyId,
+        role,
+        position,
+        invitedByUserId,
+      });
+      out.push({
+        name: row.name?.trim() || null,
+        position,
+        role,
+        token,
+        url: `https://t.me/${botUsername}?start=inv_${token}`,
+      });
+    }
+
+    return out;
+  }
+
+  /**
    * Atomically consume an invite. Returns the payload if valid, or null if
    * the token is unknown, expired, or already consumed. Marks the row as
    * consumed by `consumedByUserId` at the current time.

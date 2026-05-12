@@ -438,7 +438,25 @@
     "actionsLabel": "Actions for {name}",
     "presenceIn": "In office",
     "presenceOut": "Away",
-    "presenceUnknown": "—"
+    "presenceUnknown": "—",
+    "bulk": {
+      "tabSingle": "Single employee",
+      "tabBulk": "Bulk invite",
+      "listLabel": "Employee list",
+      "placeholder": "One line = one employee:\nName\nor\nName, Position",
+      "hint": "Each non-empty line is one employee. The first comma separates name from position.",
+      "roleLabel": "Role for everyone",
+      "generate": "Generate links",
+      "generating": "Generating…",
+      "emptyError": "Add at least one line.",
+      "tooManyError": "No more than 100 employees at a time.",
+      "genericError": "Couldn't generate the links.",
+      "resultCount": "Invites created: {count}",
+      "noName": "No name",
+      "copy": "Copy",
+      "copied": "Copied",
+      "again": "Create more"
+    }
   },
   "billing": {
     "eyebrow": "Company subscription",
