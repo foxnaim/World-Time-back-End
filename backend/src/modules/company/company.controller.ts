@@ -1,4 +1,4 @@
-import { Body, Controller, Delete, Get, Param, Patch, Post, UseGuards } from '@nestjs/common';
+import { Body, Controller, Delete, Get, Param, Patch, Post, Query, UseGuards } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { EmployeeRole } from '@prisma/client';
 import { Throttle } from '@nestjs/throttler';
@@ -93,14 +93,26 @@ export class CompanyController {
     return this.companyService.inviteEmployee(user.id, id, dto);
   }
 
-  /** List employees of a company. */
+  /** List employees of a company. Pass `?includeInactive=1` to include fired staff. */
   @Get(':id/employees')
   @RequireRole(EmployeeRole.OWNER, EmployeeRole.MANAGER)
   @ApiOperation({ summary: 'List employees of a company (OWNER/MANAGER)' })
   @ApiResponse({ status: 200, description: 'List of employees' })
   @ApiResponse({ status: 403, description: 'Insufficient role' })
-  listEmployees(@Param('id') id: string) {
-    return this.companyService.listEmployees(id);
+  listEmployees(@Param('id') id: string, @Query('includeInactive') includeInactive?: string) {
+    const include = includeInactive === '1' || includeInactive === 'true';
+    return this.companyService.listEmployees(id, include);
+  }
+
+  /** Rich profile for a single employee. */
+  @Get(':id/employees/:employeeId')
+  @RequireRole(EmployeeRole.OWNER, EmployeeRole.MANAGER)
+  @ApiOperation({ summary: 'Get a single employee profile (OWNER/MANAGER)' })
+  @ApiResponse({ status: 200, description: 'Employee detail' })
+  @ApiResponse({ status: 403, description: 'Insufficient role' })
+  @ApiResponse({ status: 404, description: 'Employee not found' })
+  getEmployeeDetail(@Param('id') id: string, @Param('employeeId') employeeId: string) {
+    return this.companyService.getEmployeeDetail(id, employeeId);
   }
 
   /** Update an employee's position, rate, or role. */

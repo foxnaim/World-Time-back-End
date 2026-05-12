@@ -241,7 +241,7 @@ export class CompanyService {
    * BigInt (`user.telegramId`) is dropped from the payload because Nest's
    * default JSON serializer chokes on it.
    */
-  async listEmployees(companyId: string) {
+  async listEmployees(companyId: string, includeInactive = false) {
     const company = await this.prisma.company.findUnique({
       where: { id: companyId },
       select: { id: true, timezone: true, workStartHour: true },
@@ -254,7 +254,11 @@ export class CompanyService {
     const monthStart = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1));
 
     const employees = await this.prisma.employee.findMany({
-      where: { companyId, role: { not: EmployeeRole.OWNER }, status: EmployeeStatus.ACTIVE },
+      where: {
+        companyId,
+        role: { not: EmployeeRole.OWNER },
+        ...(includeInactive ? {} : { status: EmployeeStatus.ACTIVE }),
+      },
       include: {
         user: {
           select: {
@@ -337,6 +341,165 @@ export class CompanyService {
     });
 
     return { items };
+  }
+
+  /**
+   * Rich employee profile: identity, salary, department/shift, plus 30-day
+   * arrival history, month-to-date worked-hours / late-count, this-year
+   * vacation days, recent check-ins and absences. All local-day arithmetic is
+   * done in the company timezone. Decimal -> number; no BigInt in the payload.
+   */
+  async getEmployeeDetail(companyId: string, employeeId: string) {
+    const company = await this.prisma.company.findUnique({
+      where: { id: companyId },
+      select: { id: true, timezone: true, workStartHour: true },
+    });
+    if (!company) throw new NotFoundException('Company not found');
+
+    const now = new Date();
+    const yearStartUtc = new Date(Date.UTC(now.getUTCFullYear(), 0, 1));
+    // 30-day window (inclusive of today). Use UTC midnight 29 days back as the
+    // lower bound — local-day grouping happens below.
+    const windowStart = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+
+    const emp = await this.prisma.employee.findFirst({
+      where: { id: employeeId, companyId },
+      include: {
+        user: {
+          select: { firstName: true, lastName: true, avatarUrl: true },
+        },
+        department: { select: { name: true } },
+        shift: { select: { name: true } },
+        checkIns: {
+          where: { timestamp: { gte: windowStart } },
+          select: { type: true, timestamp: true },
+          orderBy: { timestamp: 'asc' },
+        },
+        absences: {
+          orderBy: { startDate: 'desc' },
+          select: { type: true, startDate: true, endDate: true, note: true },
+        },
+      },
+    });
+    if (!emp) throw new NotFoundException('Employee not found');
+
+    const firstName = emp.user.firstName ?? '';
+    const lastName = emp.user.lastName ?? '';
+    const name = `${firstName}${lastName ? ` ${lastName}` : ''}`.trim() || 'Без имени';
+
+    // Local-day key formatter in the company timezone.
+    const dayFmt = new Intl.DateTimeFormat('en-CA', {
+      timeZone: company.timezone,
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+    });
+
+    const byDay = groupByDay(emp.checkIns, company.timezone);
+
+    // --- 30-day arrival series (oldest -> newest), one slot per local day ---
+    const arrivals30d: { date: string; firstInMinutes: number | null }[] = [];
+    const arrivalMinutesSamples: number[] = [];
+    for (let i = 29; i >= 0; i--) {
+      const d = new Date(now.getTime() - i * 24 * 60 * 60 * 1000);
+      const key = dayFmt.format(d);
+      const dayCheckIns = byDay.get(key) ?? [];
+      const firstIn = [...dayCheckIns]
+        .sort((a, b) => a.timestamp.getTime() - b.timestamp.getTime())
+        .find((c) => c.type === 'IN');
+      if (firstIn) {
+        const { hour, minute } = localParts(firstIn.timestamp, company.timezone);
+        const mins = hour * 60 + minute;
+        arrivals30d.push({ date: key, firstInMinutes: mins });
+        arrivalMinutesSamples.push(mins);
+      } else {
+        arrivals30d.push({ date: key, firstInMinutes: null });
+      }
+    }
+    const avgArrivalMinutes =
+      arrivalMinutesSamples.length > 0
+        ? Math.round(
+            arrivalMinutesSamples.reduce((a, b) => a + b, 0) / arrivalMinutesSamples.length,
+          )
+        : null;
+
+    // --- Month-to-date late count + worked hours (pair IN/OUT per local day) ---
+    let lateCountMonth = 0;
+    let workedSecondsMonth = 0;
+    const monthKeyPrefix = new Intl.DateTimeFormat('en-CA', {
+      timeZone: company.timezone,
+      year: 'numeric',
+      month: '2-digit',
+    }).format(now);
+    for (const [dayKey, dayCheckIns] of byDay) {
+      // Cheap month filter on the local-day key (YYYY-MM-...).
+      if (!dayKey.startsWith(monthKeyPrefix)) continue;
+      const sorted = [...dayCheckIns].sort(
+        (a, b) => a.timestamp.getTime() - b.timestamp.getTime(),
+      );
+      const firstIn = sorted.find((c) => c.type === 'IN');
+      if (firstIn) {
+        const { hour, minute } = localParts(firstIn.timestamp, company.timezone);
+        if (
+          computeLateMinutes(hour, minute, company.workStartHour, LATE_GRACE_MINUTES) > 0
+        ) {
+          lateCountMonth += 1;
+        }
+        const lastOut = [...sorted].reverse().find((c) => c.type === 'OUT');
+        if (lastOut && lastOut.timestamp.getTime() > firstIn.timestamp.getTime()) {
+          workedSecondsMonth += (lastOut.timestamp.getTime() - firstIn.timestamp.getTime()) / 1000;
+        }
+      }
+    }
+    const workedHoursMonth = Math.round((workedSecondsMonth / 3600) * 10) / 10;
+
+    // --- This-year vacation days (sum of inclusive day spans of VACATION) ---
+    let vacationDaysThisYear = 0;
+    for (const a of emp.absences) {
+      if (a.type !== 'VACATION') continue;
+      if (a.endDate < yearStartUtc) continue;
+      const start = a.startDate < yearStartUtc ? yearStartUtc : a.startDate;
+      const days =
+        Math.floor((a.endDate.getTime() - start.getTime()) / (24 * 60 * 60 * 1000)) + 1;
+      vacationDaysThisYear += Math.max(0, days);
+    }
+
+    // --- Recent check-ins (last ~20, newest first) ---
+    const recentCheckIns = [...emp.checkIns]
+      .sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime())
+      .slice(0, 20)
+      .map((c) => ({ type: c.type, timestamp: c.timestamp }));
+
+    const monthlySalary =
+      emp.monthlySalary == null ? null : Number(emp.monthlySalary.toString());
+    const hourlyRate = emp.hourlyRate == null ? null : Number(emp.hourlyRate.toString());
+
+    return {
+      id: emp.id,
+      name,
+      position: emp.position,
+      role: emp.role,
+      status: emp.status,
+      avatarUrl: emp.user.avatarUrl,
+      monthlySalary,
+      hourlyRate,
+      departmentName: emp.department?.name ?? null,
+      shiftName: emp.shift?.name ?? null,
+      stats: {
+        avgArrivalMinutes,
+        lateCountMonth,
+        workedHoursMonth,
+        vacationDaysThisYear,
+      },
+      arrivals30d,
+      recentCheckIns,
+      absences: emp.absences.map((a) => ({
+        type: a.type,
+        startDate: a.startDate,
+        endDate: a.endDate,
+        note: a.note,
+      })),
+    };
   }
 
   /**
