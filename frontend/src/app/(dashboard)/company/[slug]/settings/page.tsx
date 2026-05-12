@@ -1135,6 +1135,12 @@ export default function SettingsPage() {
               {t('settings.penaltyHint')}
             </p>
           </div>
+
+          <div className="pt-2">
+            <Button onClick={save} disabled={saving}>
+              {saving ? t('common.saving') : t('common.save')}
+            </Button>
+          </div>
         </div>
       </Card>
 
