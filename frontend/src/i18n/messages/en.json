@@ -248,6 +248,8 @@
     "latitude": "Latitude",
     "longitude": "Longitude",
     "mapPlaceholder": "Map — in the next iteration",
+    "mapHint": "Click the map to set the check-in point. Drag the marker to fine-tune.",
+    "mapLoading": "Loading map…",
     "geofenceRadius": "Geofence radius",
     "meters": "m",
     "scheduleEyebrow": "Work day",
