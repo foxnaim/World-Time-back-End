@@ -8,7 +8,13 @@ import { fetcher } from '@/lib/fetcher';
 import { KpiCard } from '@/components/dashboard/company/kpi-card';
 import { RankingList, type RankingEntry } from '@/components/dashboard/company/ranking-list';
 import { ActivityFeed } from '@/components/dashboard/company/activity-feed';
+import dynamic from 'next/dynamic';
 import { useLang } from '@/i18n/context';
+
+const PresenceMap = dynamic(
+  () => import('@/components/dashboard/company/presence-map'),
+  { ssr: false },
+);
 
 // ---------------------------------------------------------------------------
 // Backend response shapes
@@ -28,7 +34,171 @@ type CompanyDetail = {
   slug: string;
   name: string;
   address?: string;
+  latitude?: number | string | null;
+  longitude?: number | string | null;
 };
+
+// GET /api/companies/:id/presence/live
+type PresencePerson = {
+  employeeId: string;
+  name: string;
+  avatarUrl: string | null;
+  sinceTimestamp: string;
+  lat: number | null;
+  lng: number | null;
+};
+type PresenceSnapshot = {
+  total: number;
+  present: number;
+  inOffice: PresencePerson[];
+};
+
+function initialsOf(name: string): string {
+  return (
+    name
+      .split(/\s+/)
+      .filter(Boolean)
+      .slice(0, 2)
+      .map((p) => p[0]?.toUpperCase() ?? '')
+      .join('') || '—'
+  );
+}
+
+/** Hours/minutes elapsed since an ISO timestamp, clamped at zero. */
+function elapsedHM(iso: string, nowMs: number): { h: number; m: number } {
+  const start = new Date(iso).getTime();
+  if (Number.isNaN(start)) return { h: 0, m: 0 };
+  const diffMin = Math.max(0, Math.floor((nowMs - start) / 60000));
+  return { h: Math.floor(diffMin / 60), m: diffMin % 60 };
+}
+
+function toNum(v: unknown): number | null {
+  if (v === null || v === undefined || v === '') return null;
+  const n = Number(v as any);
+  return Number.isFinite(n) ? n : null;
+}
+
+function PresenceWidget({
+  companyId,
+  companyLat,
+  companyLng,
+}: {
+  companyId: string | undefined;
+  companyLat: number | null;
+  companyLng: number | null;
+}) {
+  const { t } = useLang();
+  const { data, error } = useSWR<PresenceSnapshot>(
+    companyId ? `/api/companies/${companyId}/presence/live` : null,
+    fetcher,
+    { refreshInterval: 30000 },
+  );
+
+  // Tick every 60s so the "for Xh Ymin" labels stay fresh.
+  const [nowMs, setNowMs] = React.useState(() => Date.now());
+  React.useEffect(() => {
+    const id = setInterval(() => setNowMs(Date.now()), 60000);
+    return () => clearInterval(id);
+  }, []);
+
+  const inOffice = data?.inOffice ?? [];
+  const mapMarkers = React.useMemo(
+    () =>
+      inOffice
+        .filter((p) => toNum(p.lat) != null && toNum(p.lng) != null)
+        .map((p) => ({
+          employeeId: p.employeeId,
+          name: p.name,
+          lat: toNum(p.lat) as number,
+          lng: toNum(p.lng) as number,
+        })),
+    [inOffice],
+  );
+
+  const countLabel =
+    data != null ? `${data.present} / ${data.total}` : '— / —';
+
+  return (
+    <section className="grid gap-6 lg:grid-cols-2" aria-label={t('overview.presenceTitle')}>
+      <Card
+        eyebrow={t('overview.presenceTitle')}
+        title={countLabel}
+      >
+        {error ? (
+          <div className="py-6 text-center text-sm text-[#E85A4F] tracking-tight">
+            {t('overview.genericLoadError')}
+          </div>
+        ) : !data ? (
+          <div className="flex flex-col gap-3">
+            {Array.from({ length: 4 }).map((_, i) => (
+              <div key={i} className="animate-pulse h-10 w-full rounded-md bg-[#D8C3A5]/40" />
+            ))}
+          </div>
+        ) : inOffice.length === 0 ? (
+          <div className="py-10 text-center">
+            <div className="text-3xl text-[#6b6966]" style={{ fontFamily: 'Fraunces, serif' }}>
+              {t('overview.presenceEmpty')}
+            </div>
+          </div>
+        ) : (
+          <ul className="flex flex-col">
+            {inOffice.map((p, i) => {
+              const { h, m } = elapsedHM(p.sinceTimestamp, nowMs);
+              return (
+                <li
+                  key={p.employeeId}
+                  className={cn(
+                    'flex items-center gap-3 py-3',
+                    i !== inOffice.length - 1 && 'border-b border-[#8E8D8A]/15',
+                  )}
+                >
+                  {p.avatarUrl ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img
+                      src={p.avatarUrl}
+                      alt=""
+                      className="h-9 w-9 shrink-0 rounded-full object-cover"
+                    />
+                  ) : (
+                    <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#D8C3A5]/50 text-xs font-medium text-[#3d3b38]">
+                      {initialsOf(p.name)}
+                    </span>
+                  )}
+                  <span
+                    className="min-w-0 flex-1 truncate text-base text-[#3d3b38]"
+                    style={{ fontFamily: 'Fraunces, serif' }}
+                  >
+                    {p.name}
+                  </span>
+                  <span className="shrink-0 text-[11px] uppercase tracking-[0.18em] text-[#6b6966] tabular-nums">
+                    {t('overview.presenceSince', { h, m })}
+                  </span>
+                </li>
+              );
+            })}
+          </ul>
+        )}
+      </Card>
+
+      <Card eyebrow={t('overview.presenceMapTitle')} title={t('overview.presenceMapTitle')}>
+        {mapMarkers.length === 0 ? (
+          <div className="py-10 text-center text-[11px] uppercase tracking-[0.22em] text-[#6b6966]">
+            {t('overview.presenceNoCoords')}
+          </div>
+        ) : (
+          <PresenceMap
+            markers={mapMarkers}
+            center={
+              companyLat != null && companyLng != null
+                ? { lat: companyLat, lng: companyLng }
+                : null
+            }
+          />
+        )}
+      </Card>
+    </section>
+  );
+}
 
 type CompanySummary = {
   totalEmployees: number;
@@ -268,6 +438,13 @@ export default function CompanyOverviewPage() {
       <section aria-label={t('overview.activityTitle')}>
         <ActivityFeed companyId={id} />
       </section>
+
+      {/* Who's in office now + live presence mini-map — polls every 30s */}
+      <PresenceWidget
+        companyId={id}
+        companyLat={toNum(company?.latitude)}
+        companyLng={toNum(company?.longitude)}
+      />
 
       {/* Two column */}
       <section className="grid gap-6 lg:grid-cols-2">

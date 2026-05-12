@@ -14,6 +14,7 @@ import { ShiftService } from './shifts/shift.service';
 import { AbsenceController } from './absences/absence.controller';
 import { AbsenceService } from './absences/absence.service';
 import { ActivityService } from '@/modules/checkin/activity.service';
+import { PresenceService } from '@/modules/checkin/presence.service';
 
 /**
  * CompanyModule
@@ -26,7 +27,7 @@ import { ActivityService } from '@/modules/checkin/activity.service';
 @Module({
   imports: [BillingModule],
   controllers: [CompanyController, LocationController, DepartmentController, ShiftController, AbsenceController],
-  providers: [CompanyService, InviteTokenService, CompanyRoleGuard, BotService, LocationService, DepartmentService, ShiftService, AbsenceService, ActivityService],
+  providers: [CompanyService, InviteTokenService, CompanyRoleGuard, BotService, LocationService, DepartmentService, ShiftService, AbsenceService, ActivityService, PresenceService],
   exports: [CompanyService, InviteTokenService],
 })
 export class CompanyModule {}

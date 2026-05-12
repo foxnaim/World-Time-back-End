@@ -420,7 +420,12 @@
     "activityArrived": "{name} пришёл(ла) · {time}",
     "activityLeft": "{name} ушёл(ла) · {time}",
     "activityLateBadge": "+{n} мин",
-    "activityLateBadgeGeneric": "опоздание"
+    "activityLateBadgeGeneric": "опоздание",
+    "presenceTitle": "Кто сейчас в офисе",
+    "presenceEmpty": "Сейчас никого нет",
+    "presenceSince": "уже {h}ч {m}мин",
+    "presenceMapTitle": "Карта присутствия",
+    "presenceNoCoords": "Координаты отметок недоступны"
   },
   "employees": {
     "eyebrow": "Сотрудники",

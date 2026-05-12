@@ -420,7 +420,12 @@
     "activityArrived": "{name} келді · {time}",
     "activityLeft": "{name} кетті · {time}",
     "activityLateBadge": "+{n} мин",
-    "activityLateBadgeGeneric": "кешігу"
+    "activityLateBadgeGeneric": "кешігу",
+    "presenceTitle": "Қазір кеңседе кім бар",
+    "presenceEmpty": "Қазір ешкім жоқ",
+    "presenceSince": "{h}сағ {m}мин болды",
+    "presenceMapTitle": "Қатысу картасы",
+    "presenceNoCoords": "Белгілеу координаталары қолжетімсіз"
   },
   "employees": {
     "eyebrow": "Қызметкерлер",
