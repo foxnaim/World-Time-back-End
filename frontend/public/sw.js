@@ -9,7 +9,7 @@
  * dependency-free worker registered by <RegisterSw /> on the office QR page.
  */
 
-const VERSION = 'tact-sw-v1';
+const VERSION = 'tact-sw-v2';
 const STATIC_CACHE = `${VERSION}-static`;
 const EXPECTED_CACHE_PREFIX = 'tact-sw-';
 
