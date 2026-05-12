@@ -262,7 +262,16 @@
     "holidayDate": "Date",
     "holidayName": "Name",
     "holidayAdd": "Add",
-    "holidaysEmpty": "No holidays added yet"
+    "holidaysEmpty": "No holidays added yet",
+    "penaltyEyebrow": "Discipline",
+    "penaltyTitle": "Late-arrival penalties",
+    "penaltyEnabled": "Enable late-arrival penalties",
+    "penaltyGrace": "Grace period (min)",
+    "penaltyModeFixed": "Fixed amount",
+    "penaltyModePercent": "% of daily rate",
+    "penaltyAmount": "Penalty amount",
+    "penaltyPercent": "Percent",
+    "penaltyHint": "A penalty is applied for each working day where the first check-in is later than the start of the workday plus the grace period. Holidays and approved absences are excluded."
   },
   "reports": {
     "eyebrow": "Reports",
@@ -319,7 +328,10 @@
     "exportSheets": "Export to Google Sheets",
     "exportSheetsLoading": "Exporting…",
     "exportSheetsDone": "Payroll exported to the spreadsheet",
-    "exportError": "Failed to export payroll"
+    "exportError": "Failed to export payroll",
+    "penaltyDays": "Late (days)",
+    "penaltyTotal": "Deductions",
+    "netPay": "Net pay"
   },
   "qr": {
     "eyebrow": "Office QR",

@@ -2,6 +2,7 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 
 import { PrismaService } from '@/common/prisma.service';
 import { buildMonthRange, groupByDay } from '@/modules/analytics/analytics.helpers';
+import { LatePenaltyService } from '@/modules/billing/late-penalty.service';
 
 export type PayrollBasis = 'salary' | 'hourly' | 'none';
 
@@ -18,6 +19,12 @@ export interface PayrollEmployeeRow {
   estimatedPay: number | null;
   /** Optional pro-rated figure for salaried staff (salary x daysAttended / workingDays). */
   proratedPay: number | null;
+  /** Number of late-arrival days this month (0 when late penalties are disabled). */
+  penaltyDays: number;
+  /** Total late-arrival deduction for the month. */
+  penaltyTotal: number;
+  /** estimatedPay (or 0) minus penaltyTotal. */
+  netPay: number;
 }
 
 export interface PayrollReport {
@@ -25,6 +32,9 @@ export interface PayrollReport {
   month: number;
   workingDays: number;
   employees: PayrollEmployeeRow[];
+  totals: {
+    penaltyTotal: number;
+  };
 }
 
 /**
@@ -69,7 +79,10 @@ function countWorkingDays(year: number, monthIndex0: number): number {
  */
 @Injectable()
 export class PayrollService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly latePenalty: LatePenaltyService,
+  ) {}
 
   async getPayroll(companyId: string, month: string): Promise<PayrollReport> {
     const company = await this.prisma.company.findUnique({
@@ -121,6 +134,12 @@ export class PayrollService {
       orderBy: { createdAt: 'asc' },
     });
 
+    // Late-arrival penalties for the same month, indexed by employee id.
+    const penalties = await this.latePenalty.computeMonthlyPenalties(company.id, month);
+    const penaltyByEmployee = new Map(
+      penalties.employees.map((p) => [p.employeeId, p]),
+    );
+
     const rows: PayrollEmployeeRow[] = employees.map((emp) => {
       const { workedHours, daysAttended } = this.sumWorkedHours(
         emp.checkIns,
@@ -150,6 +169,11 @@ export class PayrollService {
         ? `${emp.user.firstName} ${emp.user.lastName}`
         : emp.user.firstName;
 
+      const pen = penaltyByEmployee.get(emp.id);
+      const penaltyDays = pen?.lateDays ?? 0;
+      const penaltyTotal = round2(pen?.totalPenalty ?? 0);
+      const netPay = round2((estimatedPay ?? 0) - penaltyTotal);
+
       return {
         id: emp.id,
         name,
@@ -162,10 +186,21 @@ export class PayrollService {
         deltaHours: round1(workedHours - expectedHours),
         estimatedPay,
         proratedPay,
+        penaltyDays,
+        penaltyTotal,
+        netPay,
       };
     });
 
-    return { year, month: monthNum, workingDays, employees: rows };
+    const penaltyTotalAll = round2(rows.reduce((s, r) => s + r.penaltyTotal, 0));
+
+    return {
+      year,
+      month: monthNum,
+      workingDays,
+      employees: rows,
+      totals: { penaltyTotal: penaltyTotalAll },
+    };
   }
 
   /**

@@ -262,7 +262,16 @@
     "holidayDate": "Күні",
     "holidayName": "Атауы",
     "holidayAdd": "Қосу",
-    "holidaysEmpty": "Әзірге мерекелер қосылмаған"
+    "holidaysEmpty": "Әзірге мерекелер қосылмаған",
+    "penaltyEyebrow": "Тәртіп",
+    "penaltyTitle": "Кешігу үшін айыппұлдар",
+    "penaltyEnabled": "Кешігу айыппұлдарын қосу",
+    "penaltyGrace": "Жеңілдік кезеңі (мин)",
+    "penaltyModeFixed": "Тіркелген сома",
+    "penaltyModePercent": "Күндік мөлшерлеменің %",
+    "penaltyAmount": "Айыппұл сомасы",
+    "penaltyPercent": "Пайыз",
+    "penaltyHint": "Айыппұл жұмыс күні басталғаннан және жеңілдік кезеңінен кейін бірінші белгі қойылған әрбір жұмыс күні үшін есептеледі. Мерекелер мен мақұлданған демалыстар есепке алынбайды."
   },
   "reports": {
     "eyebrow": "Есептер",
@@ -319,7 +328,10 @@
     "exportSheets": "Google Sheets-ке шығару",
     "exportSheetsLoading": "Шығарылуда…",
     "exportSheetsDone": "Жалақы кестеге шығарылды",
-    "exportError": "Жалақыны шығару мүмкін болмады"
+    "exportError": "Жалақыны шығару мүмкін болмады",
+    "penaltyDays": "Кешігу (күн)",
+    "penaltyTotal": "Ұстап қалулар",
+    "netPay": "Төленетін (нетто)"
   },
   "qr": {
     "eyebrow": "Кеңсе QR",

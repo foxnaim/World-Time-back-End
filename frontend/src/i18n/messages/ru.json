@@ -262,7 +262,16 @@
     "holidayDate": "Дата",
     "holidayName": "Название",
     "holidayAdd": "Добавить",
-    "holidaysEmpty": "Праздники пока не добавлены"
+    "holidaysEmpty": "Праздники пока не добавлены",
+    "penaltyEyebrow": "Дисциплина",
+    "penaltyTitle": "Штрафы за опоздания",
+    "penaltyEnabled": "Включить штрафы за опоздания",
+    "penaltyGrace": "Льготный период (мин)",
+    "penaltyModeFixed": "Фиксированная сумма",
+    "penaltyModePercent": "% от дневной ставки",
+    "penaltyAmount": "Сумма штрафа",
+    "penaltyPercent": "Процент",
+    "penaltyHint": "Штраф начисляется за каждый рабочий день, когда первая отметка прихода позже начала рабочего дня плюс льготный период. Праздники и одобренные отсутствия не учитываются."
   },
   "reports": {
     "eyebrow": "Отчёты",
@@ -319,7 +328,10 @@
     "exportSheets": "Выгрузить в Google Sheets",
     "exportSheetsLoading": "Выгрузка…",
     "exportSheetsDone": "Зарплата выгружена в таблицу",
-    "exportError": "Не удалось выгрузить зарплату"
+    "exportError": "Не удалось выгрузить зарплату",
+    "penaltyDays": "Опоздания (дн)",
+    "penaltyTotal": "Удержания",
+    "netPay": "К выплате (нетто)"
   },
   "qr": {
     "eyebrow": "QR для офиса",

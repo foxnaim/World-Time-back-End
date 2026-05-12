@@ -46,6 +46,10 @@ type CompanyDetail = {
   workStartHour?: number | null;
   workEndHour?: number | null;
   timezone?: string | null;
+  latePenaltyEnabled?: boolean | null;
+  latePenaltyGraceMin?: number | null;
+  latePenaltyAmount?: number | null;
+  latePenaltyPercent?: number | null;
   myRole?: 'OWNER' | 'MANAGER' | 'EMPLOYEE' | string;
 };
 
@@ -782,6 +786,17 @@ export default function SettingsPage() {
       if (form.workStartHour != null) payload.workStartHour = Math.floor(form.workStartHour);
       if (form.workEndHour != null) payload.workEndHour = Math.floor(form.workEndHour);
       if (form.timezone != null) payload.timezone = form.timezone;
+      payload.latePenaltyEnabled = !!form.latePenaltyEnabled;
+      if (form.latePenaltyGraceMin != null)
+        payload.latePenaltyGraceMin = Math.max(0, Math.floor(form.latePenaltyGraceMin));
+      payload.latePenaltyAmount =
+        form.latePenaltyAmount != null && Number.isFinite(form.latePenaltyAmount)
+          ? form.latePenaltyAmount
+          : null;
+      payload.latePenaltyPercent =
+        form.latePenaltyPercent != null && Number.isFinite(form.latePenaltyPercent)
+          ? form.latePenaltyPercent
+          : null;
 
       const updated = await api.patch<CompanyDetail>(`/api/companies/${form.id}`, payload);
       // Optimistically write the server response, then revalidate so the SWR
@@ -994,6 +1009,134 @@ export default function SettingsPage() {
       <ShiftsCard companyId={form.id} />
 
       <HolidaysCard companyId={form.id} />
+
+      <Card eyebrow={t('settings.penaltyEyebrow')} title={t('settings.penaltyTitle')}>
+        <div className="flex flex-col gap-6">
+          {/* Enable toggle */}
+          <label className="flex items-center justify-between gap-4">
+            <span className="text-sm text-[#3d3b38]">{t('settings.penaltyEnabled')}</span>
+            <button
+              type="button"
+              role="switch"
+              aria-checked={!!form.latePenaltyEnabled}
+              onClick={() => update('latePenaltyEnabled', !form.latePenaltyEnabled)}
+              className={cn(
+                'relative h-6 w-11 shrink-0 rounded-full transition-colors',
+                form.latePenaltyEnabled ? 'bg-[#E98074]' : 'bg-[#8E8D8A]/30',
+              )}
+            >
+              <span
+                className={cn(
+                  'absolute top-0.5 h-5 w-5 rounded-full bg-white shadow transition-transform',
+                  form.latePenaltyEnabled ? 'translate-x-[22px]' : 'translate-x-0.5',
+                )}
+              />
+            </button>
+          </label>
+
+          <div
+            className={cn(
+              'flex flex-col gap-6 transition-opacity',
+              form.latePenaltyEnabled ? 'opacity-100' : 'opacity-50 pointer-events-none',
+            )}
+          >
+            <label className="flex flex-col gap-1.5 max-w-[220px]">
+              <span className="text-[10px] uppercase tracking-[0.24em] text-[#6b6966]">
+                {t('settings.penaltyGrace')}
+              </span>
+              <Input
+                type="number"
+                min={0}
+                step={1}
+                value={form.latePenaltyGraceMin ?? 15}
+                onChange={(e) =>
+                  update(
+                    'latePenaltyGraceMin',
+                    e.target.value === '' ? null : Math.max(0, Math.floor(Number(e.target.value))),
+                  )
+                }
+              />
+            </label>
+
+            <div className="flex flex-col gap-4">
+              {/* Fixed amount */}
+              <label className="flex items-center gap-3">
+                <input
+                  type="radio"
+                  name="penaltyMode"
+                  checked={form.latePenaltyAmount != null}
+                  onChange={() => {
+                    update('latePenaltyAmount', form.latePenaltyAmount ?? 0);
+                    update('latePenaltyPercent', null);
+                  }}
+                  className="accent-[#E98074]"
+                />
+                <span className="text-sm text-[#3d3b38]">{t('settings.penaltyModeFixed')}</span>
+              </label>
+              {form.latePenaltyAmount != null && (
+                <label className="flex flex-col gap-1.5 max-w-[220px] pl-7">
+                  <span className="text-[10px] uppercase tracking-[0.24em] text-[#6b6966]">
+                    {t('settings.penaltyAmount')}
+                  </span>
+                  <Input
+                    type="number"
+                    min={0}
+                    step="0.01"
+                    value={form.latePenaltyAmount ?? 0}
+                    onChange={(e) =>
+                      update(
+                        'latePenaltyAmount',
+                        e.target.value === '' ? 0 : Math.max(0, Number(e.target.value)),
+                      )
+                    }
+                  />
+                </label>
+              )}
+
+              {/* Percent of daily rate */}
+              <label className="flex items-center gap-3">
+                <input
+                  type="radio"
+                  name="penaltyMode"
+                  checked={form.latePenaltyAmount == null}
+                  onChange={() => {
+                    update('latePenaltyAmount', null);
+                    update('latePenaltyPercent', form.latePenaltyPercent ?? 0);
+                  }}
+                  className="accent-[#E98074]"
+                />
+                <span className="text-sm text-[#3d3b38]">{t('settings.penaltyModePercent')}</span>
+              </label>
+              {form.latePenaltyAmount == null && (
+                <label className="flex flex-col gap-1.5 max-w-[220px] pl-7">
+                  <span className="text-[10px] uppercase tracking-[0.24em] text-[#6b6966]">
+                    {t('settings.penaltyPercent')}
+                  </span>
+                  <Input
+                    type="number"
+                    min={0}
+                    max={100}
+                    step="0.1"
+                    value={form.latePenaltyPercent ?? 0}
+                    onChange={(e) =>
+                      update(
+                        'latePenaltyPercent',
+                        e.target.value === ''
+                          ? 0
+                          : Math.min(100, Math.max(0, Number(e.target.value))),
+                      )
+                    }
+                  />
+                </label>
+              )}
+            </div>
+
+            <p className="text-[11px] text-[#8E8D8A] leading-relaxed max-w-2xl">
+              {t('settings.penaltyHint')}
+            </p>
+          </div>
+        </div>
+      </Card>
 
       <Card className="border border-[#E85A4F]/30">
         <div className="flex flex-col gap-3">

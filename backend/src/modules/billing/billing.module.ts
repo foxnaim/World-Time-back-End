@@ -7,6 +7,7 @@ import { BillingService } from './billing.service';
 import { FreelancerBillingController } from './freelancer-billing.controller';
 import { FreelancerBillingService } from './freelancer-billing.service';
 import { FxService } from './fx.service';
+import { LatePenaltyService } from './late-penalty.service';
 import { SeatLimitGuard } from './guards/seat-limit.guard';
 
 /**
@@ -20,7 +21,7 @@ import { SeatLimitGuard } from './guards/seat-limit.guard';
 @Module({
   imports: [PrismaModule, RedisModule],
   controllers: [BillingController, FreelancerBillingController],
-  providers: [BillingService, FreelancerBillingService, FxService, SeatLimitGuard],
-  exports: [BillingService, FreelancerBillingService, SeatLimitGuard],
+  providers: [BillingService, FreelancerBillingService, FxService, LatePenaltyService, SeatLimitGuard],
+  exports: [BillingService, FreelancerBillingService, LatePenaltyService, SeatLimitGuard],
 })
 export class BillingModule {}
