@@ -12,3 +12,4 @@ service-account.json
 backend/.data/google-oauth.json
 backend/.data/company-sheets.json
 .github/workflows/
+.claude/
