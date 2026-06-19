@@ -35,7 +35,7 @@
     "compression": "^1.7.5",
     "date-fns": "^4.1.0",
     "express": "^4.21.1",
-    "google-auth-library": "^9.15.1",
+    "google-auth-library": "^10.6.2",
     "googleapis": "^144.0.0",
     "helmet": "^8.0.0",
     "ioredis": "^5.4.1",
