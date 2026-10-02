@@ -46,14 +46,16 @@ const inviteTokens = {
 
 describe('CompanyService', () => {
   let prisma: ReturnType<typeof makePrisma>;
+  let billing: { createDefaultFreeSubscription: jest.Mock };
   let service: CompanyService;
 
   beforeEach(() => {
     prisma = makePrisma();
+    billing = { createDefaultFreeSubscription: jest.fn().mockResolvedValue({}) };
     service = new CompanyService(
       prisma as any,
       inviteTokens,
-      {} as any,
+      billing as any,
       { record: jest.fn() } as any,
       { notifyUser: jest.fn() } as any,
     );
@@ -77,6 +79,8 @@ describe('CompanyService', () => {
       // `slugify` lowercases, strips non-alphanumerics, and collapses dashes.
       expect(result.slug).toBe('acme-inc');
       expect(result.ownerId).toBe('user-1');
+      // Every new company starts on the FREE tier.
+      expect(billing.createDefaultFreeSubscription).toHaveBeenCalledWith('company-123');
     });
   });
 

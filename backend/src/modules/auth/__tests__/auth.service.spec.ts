@@ -141,29 +141,29 @@ describe('AuthService', () => {
       expect(code).toMatch(/^\d{6}$/);
     });
 
-    it('consume returns the telegramId for a fresh code', () => {
+    it('consume returns the telegramId for a fresh code', async () => {
       const tg = BigInt(999);
       const code = service.issueBotOneTimeCode(tg);
-      expect(service.consumeBotOneTimeCode(code)).toBe(tg);
+      await expect(service.consumeBotOneTimeCode(code)).resolves.toBe(tg);
     });
 
-    it('consume returns null for an unknown code', () => {
-      expect(service.consumeBotOneTimeCode('000000')).toBeNull();
+    it('consume returns null for an unknown code', async () => {
+      await expect(service.consumeBotOneTimeCode('000000')).resolves.toBeNull();
     });
 
-    it('consume is single-use (second call returns null)', () => {
+    it('consume is single-use (second call returns null)', async () => {
       const code = service.issueBotOneTimeCode(BigInt(1));
-      expect(service.consumeBotOneTimeCode(code)).not.toBeNull();
-      expect(service.consumeBotOneTimeCode(code)).toBeNull();
+      await expect(service.consumeBotOneTimeCode(code)).resolves.toBe(BigInt(1));
+      await expect(service.consumeBotOneTimeCode(code)).resolves.toBeNull();
     });
 
-    it('consume returns null after the 2-minute TTL has elapsed', () => {
+    it('consume returns null after the 2-minute TTL has elapsed', async () => {
       jest.useFakeTimers();
       try {
         const code = service.issueBotOneTimeCode(BigInt(42));
         // Advance past the 2-minute TTL.
         jest.advanceTimersByTime(2 * 60 * 1000 + 1);
-        expect(service.consumeBotOneTimeCode(code)).toBeNull();
+        await expect(service.consumeBotOneTimeCode(code)).resolves.toBeNull();
       } finally {
         jest.useRealTimers();
       }

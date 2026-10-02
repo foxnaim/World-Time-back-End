@@ -48,13 +48,19 @@ Three-layer defense, each cheap on its own and compounding when combined.
    forwarded screenshot is worthless to anyone else — their Telegram account
    is not the employee's, so `scan()` rejects with 403 before any side-effect
    runs.
-3. **Optional geofence.** When the company has `latitude`, `longitude`, and
-   `geofenceRadiusM` configured, and the scan request carries GPS
-   coordinates, the service computes Haversine distance and rejects scans
+3. **Geofence.** When the company has `latitude` and `longitude` configured,
+   every scan must carry GPS coordinates (a scan without them is refused with
+   400), and the service computes Haversine distance and rejects scans
    further than `geofenceRadiusM + 50m` from the office. The 50m buffer
    (`GEOFENCE_BUFFER_M` in `checkin.service.ts`) forgives the usual urban-
    canyon GPS jitter without forcing admins to oversize their configured
-   radius.
+   radius. On the Telegram path the bot uses a location the user shared in
+   the chat only if it is at most 120 s old (`LOCATION_MAX_AGE_MS` in
+   `start.handler.ts`). An older location counts as none: the scan is
+   refused, and the bot asks for the location and retries the scan when it
+   arrives. A company without coordinates has no geofence.
+   Manual check-ins by an OWNER/MANAGER (`manualCreate`) are corrections and
+   are not geofenced.
 
 None of the three is bulletproof alone. Rotation alone doesn't stop a single
 malicious employee from scanning for everyone in person. Telegram-binding
@@ -69,34 +75,21 @@ a people problem, not a technology problem.
 ## Token Format
 
 ```
-<base64url(payload)>.<base64url(hmac)>
-payload = { c: companyId, r: rotationIndex, n: nanoid(8) }
-hmac    = HMAC_SHA256(QR_HMAC_SECRET, base64url(payload))
+token = nanoid()   // 21 random characters from [A-Za-z0-9_-]
 ```
 
-Where:
+The token is an opaque random string with no payload and no signature. It
+must fit Telegram's `/start` deep-link payload (at most 64 characters, only
+`[A-Za-z0-9_-]`): an earlier HMAC-signed `<payload>.<signature>` token was
+about 120 characters with a `.`, and Telegram dropped it.
 
-- `c` is the target company id — leaks when the QR is scanned, but company
-  membership is already derivable from any employee's public profile, so this
-  is not a meaningful disclosure.
-- `r` is `floor(Date.now() / 30_000)`, the same rotation bucket index used
-  everywhere else in the service. Having it in the payload lets observability
-  tooling reason about which rotation a given scan belongs to without a DB
-  lookup.
-- `n` is an 8-character `nanoid`, making each token unique even if two
-  companies happen to rotate in the same millisecond.
-
-The payload is deliberately **not** secret. The HMAC is what stops forgery:
-without `QR_HMAC_SECRET`, a client cannot construct a string that
-`QrService.decodeToken` will accept. The signature comparison uses
-`crypto.timingSafeEqual` on equal-length buffers, with a length guard up
-front because `timingSafeEqual` throws on mismatched lengths. See
-`qr.service.ts` lines 96–132.
-
-The DB row for the token is still the source of truth for **expiry** and
-**single-use-per-employee** enforcement. A valid-signature-but-no-row scenario
-(e.g. token from a previous boot before a DB wipe) is treated as forgery and
-rejected with `Unknown QR token`.
+Forgery is stopped by the database, not by cryptography: `verify()` first
+rejects anything that is not 10–64 characters of `[A-Za-z0-9_-]` (400
+`Malformed QR token`), then looks the string up in `QRToken`. The row is the
+only source of the **company**, the **expiry** and the
+**single-use-per-employee** record; a string with no row is rejected with
+`Unknown QR token`. With about 126 random bits per token, guessing a live one
+is not practical.
 
 ---
 
@@ -129,13 +122,14 @@ overlap is the sole reason `TTL_SEC = 45` while `ROTATION_SEC = 30`.
 
 `@Cron('*/30 * * * * *')` on `QrService.rotateAll()`:
 
-- Queries `prisma.company.findMany` for every company that has at least one
-  `ACTIVE` employee with any `CheckIn.timestamp >= startOfDay(today)` — a
-  cheap proxy for "this office is actually in use right now". Dormant
-  companies don't waste a row on every tick.
+- Rotates every company whose office display is subscribed to the SSE
+  stream right now, plus every company that has at least one `ACTIVE`
+  employee with any `CheckIn.timestamp >= startOfDay(today)` — a cheap proxy
+  for "this office is actually in use right now". Dormant companies don't
+  waste a row on every tick.
 - For each match, calls `generateForCompany(companyId)`, which:
-  1. Builds a fresh `TokenPayload`, HMAC-signs it, stores a `QRToken` row
-     with `expiresAt = now + 45s`, and
+  1. Generates a fresh random token, stores a `QRToken` row with
+     `expiresAt = now + 45s`, and
   2. Publishes the `QRTokenDisplay` to the per-company `ReplaySubject` in
      `SseHub`, which fans it out to any subscribed office display.
 - Errors inside a single company's generation are caught and logged so one
@@ -151,7 +145,7 @@ overlap is the sole reason `TTL_SEC = 45` while `ROTATION_SEC = 30`.
 | column | purpose |
 |--------|---------|
 | `id` | primary key, referenced from `CheckIn.tokenId` |
-| `token` | the full signed string as served to the display |
+| `token` | the 21-character random token served to the display |
 | `companyId` | FK to the owning company |
 | `expiresAt` | absolute wall-clock expiry (`now + TTL_SEC * 1000`) |
 | `usedByEmployeeId` | first employee to successfully scan, nullable |
@@ -206,9 +200,16 @@ Telegram login. Two accepted auth schemes:
 - **Bearer JWT** belonging to any active employee of the target company.
   Handy for kiosk setups where an admin manually signs the device in once.
 
-Dev default: `?key=test` via query string when running locally, behind a
-`NODE_ENV !== 'production'` guard, so the terminal can boot without any
-secret plumbing.
+The display key is also accepted as a `?key=` query parameter on
+`/checkin/qr/:companyId/{current,presence,stream}`, in every environment.
+Prefer the header wherever the client can set one: a query string is
+written to the nginx access log (`$request`) and to the API request log
+(`req.url`, not redacted), and stays in browser history. The query form is
+kept because a browser `EventSource` cannot send custom headers, and the
+office display (`frontend/src/components/office/qr-display.tsx`) passes the
+key that way.
+Treat a key that has appeared in a URL as readable by anyone with log
+access, and rotate it in `DISPLAY_KEYS` if those logs leak.
 
 ---
 
@@ -216,22 +217,15 @@ secret plumbing.
 
 | Scenario | Outcome |
 |----------|---------|
-| Token tampered (bad HMAC) | 401 `Invalid QR token signature` + `log.warn` |
-| Token malformed (no dot / bad base64) | 400 `Malformed QR token` / `Unreadable QR token payload` |
+| Token malformed (not 10–64 chars of `[A-Za-z0-9_-]`) | 400 `Malformed QR token` |
 | Token row not in DB | 401 `Unknown QR token` |
-| Payload companyId != DB row companyId | 401 `QR token mismatch` (forgery) |
-| Token expired | 401 `QR token expired` + `log.info` (normal) |
-| Token already consumed by same employee | 403 `This QR has already been used for your check-in; wait for the next rotation` + `log.warn` |
-| Employee not in company | 403 `You are not an employee of this company` + `log.warn` |
+| Token expired | 401 `QR token expired` |
+| Token already consumed by same employee | 403 `This QR has already been used for your check-in; wait for the next rotation` |
+| Employee not in company | 403 `You are not an employee of this company` |
 | Employee status != ACTIVE | 403 `Your employment is not active` |
-| GPS outside geofence | 403 `Вне офисной зоны` (`You are outside the office geofence...`) |
-| GPS missing but geofence required | 403 `Нужна геолокация` |
+| GPS missing, company has coordinates | 400 `Location is required to check in at this office. Share your location and scan again.` |
+| GPS outside geofence | 403 `You are outside the office geofence. Move closer and scan again.` + `log.warn` |
 | Company row vanished between verify and geofence check | 404 `Company not found` (should be impossible) |
-
-The expired-token 401 is deliberately logged at `info`, not `warn`: it is the
-single most common error and reflects ordinary user behaviour (scanning a
-few seconds too late). Signature failures stay at `warn` because they're
-suspicious.
 
 ---
 
@@ -260,29 +254,21 @@ suspicious.
    legitimately scanned the screen).
 
 5. **Clock skew.** The server is authoritative for both issuance and
-   expiry. `rotationIndex = floor(Date.now() / 30_000)` is computed
-   server-side at mint time and stored in the payload purely for
-   observability. Client clocks do not participate in the decision.
+   expiry: `expiresAt` is set server-side at mint time and stored on the
+   row. Client clocks do not participate in the decision.
 
-6. **Signature-valid token, unknown row.** `verify()` also looks up the
-   token string in the DB, so a token minted against an old secret or
-   from a different environment fails at `findUnique` rather than at the
-   HMAC check.
+6. **Token from another environment or a wiped DB.** It has no row, so
+   `verify()` rejects it at `findUnique` with `Unknown QR token`. The
+   company always comes from the row, never from the token string.
 
-7. **Token substitution between companies.** The `row.companyId !== payload.c`
-   check in `verify()` catches the case where an attacker grafts a signed
-   payload from company A onto a row belonging to company B (e.g. via a
-   stale cached token).
+7. **Old location reused on Telegram.** A location shared in the chat stays
+   in the 24-hour bot session, but `/start qr_<token>` uses it only within
+   120 s of sharing; after that the bot asks for the location again.
 
 ---
 
 ## Operational Considerations
 
-- **`QR_HMAC_SECRET` rotation.** Target behaviour: rolling rotation where
-  both the old and new secret are accepted during a 90-second transition
-  window. TODO: implement key-ring in `QrService.sign` / `decodeToken`
-  using a list of secrets instead of a single string. Today a rotation
-  invalidates all in-flight tokens, causing at most 45s of scan failures.
 - **Archival.** `QRToken` rows are cheap but unbounded over time. A
   housekeeping cron to delete rows older than 30 days is a TODO; the table
   currently grows monotonically.
@@ -290,8 +276,10 @@ suspicious.
   (60 seconds of no new rows for companies we know are active). A healthy
   production backend should see one row per active company every 30s; a
   gap indicates either a dead scheduler or a DB outage.
-- **Secret length.** `onModuleInit` throws if `QR_HMAC_SECRET` is missing
-  or shorter than 16 chars. Production secrets should be 32+ random bytes.
+- **`QR_HMAC_SECRET`.** `onModuleInit` still throws if it is missing or
+  shorter than 16 chars, but tokens are no longer signed with it: the
+  signing helpers left in `qr.service.ts` are unused. Keep setting it until
+  that check is removed.
 
 ---
 

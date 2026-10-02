@@ -166,8 +166,8 @@ pnpm install
 cp .env.example .env   # set DATABASE_URL, TELEGRAM_BOT_TOKEN, JWT_SECRET, QR_HMAC_SECRET
 
 # Database
-pnpm --filter @worktime/database db:push
-pnpm --filter @worktime/database db:seed
+pnpm db:push
+pnpm db:seed
 
 # Run
 pnpm dev

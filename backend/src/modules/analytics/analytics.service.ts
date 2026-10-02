@@ -29,7 +29,7 @@ interface CompanySummary {
   punctualityScore: number;
 }
 
-interface CompanyPayoutRow {
+export interface CompanyPayoutRow {
   employeeId: string;
   name: string;
   baseSalary: number;

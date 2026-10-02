@@ -81,7 +81,18 @@ export class CheckinService {
       throw new NotFoundException('Company not found');
     }
 
-    // 4. Optional geofence — only enforced when both sides have coordinates.
+    // 4. Geofence — enforced whenever the company has coordinates. A scan
+    //    without coordinates is refused rather than waved through: otherwise
+    //    a QR photo forwarded to someone off-site checks them in.
+    if (
+      company.latitude != null &&
+      company.longitude != null &&
+      (dto.latitude == null || dto.longitude == null)
+    ) {
+      throw new BadRequestException(
+        'Location is required to check in at this office. Share your location and scan again.',
+      );
+    }
     if (
       company.latitude != null &&
       company.longitude != null &&
@@ -268,6 +279,9 @@ export class CheckinService {
       throw new BadRequestException('Invalid timestamp');
     }
 
+    // No geofence here, on purpose: this is a manager's correction (a missed
+    // scan, a dead office screen), entered from wherever the manager is. The
+    // guard is the role check above, not the office location.
     const checkIn = await this.prisma.checkIn.create({
       data: {
         employeeId: employee.id,

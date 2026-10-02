@@ -20,7 +20,7 @@ import { PayrollService } from '@/modules/report/payroll.service';
 
 import * as sheetStore from './storage/company-sheet-store';
 import { GoogleOAuthService } from './google-oauth.service';
-import { SHEETS_I18N, normalizeLocale, type Locale } from './sheets.i18n';
+import { SHEETS_I18N, type Locale } from './sheets.i18n';
 import type { AttendanceRow, ExportResult, StoredCompanySheet, SummaryRow } from './sheets.types';
 
 const SCOPES = [
