@@ -4,7 +4,11 @@ import { useElapsed } from '@/hooks/use-elapsed';
 
 describe('useElapsed', () => {
   beforeEach(() => {
-    vi.useFakeTimers();
+    // The hook ticks on requestAnimationFrame and throttles on the frame
+    // timestamp, which Vitest does not fake by default.
+    vi.useFakeTimers({
+      toFake: ['setTimeout', 'clearTimeout', 'Date', 'requestAnimationFrame', 'cancelAnimationFrame'],
+    });
   });
 
   afterEach(() => {
@@ -21,18 +25,16 @@ describe('useElapsed', () => {
     expect(result.current).toBe(0);
 
     act(() => {
-      vi.setSystemTime(new Date(start.getTime() + 3_000));
-      vi.advanceTimersByTime(3_000);
+      vi.advanceTimersByTime(3_500);
     });
 
-    expect(result.current).toBeGreaterThanOrEqual(3);
+    expect(result.current).toBe(3);
 
     act(() => {
-      vi.setSystemTime(new Date(start.getTime() + 10_000));
-      vi.advanceTimersByTime(10_000);
+      vi.advanceTimersByTime(7_000);
     });
 
-    expect(result.current).toBeGreaterThanOrEqual(10);
+    expect(result.current).toBe(10);
   });
 
   it('returns 0 when startedAt is null', () => {

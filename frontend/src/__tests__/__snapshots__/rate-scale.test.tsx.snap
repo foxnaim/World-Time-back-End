@@ -1,0 +1,84 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`RateScale > matches snapshot at rate=1800 1`] = `
+<div
+  class="w-full select-none"
+>
+  <div
+    class="relative h-10"
+  >
+    <div
+      aria-hidden="true"
+      class="absolute left-0 right-0 top-1/2 h-px -translate-y-1/2 bg-stone/30"
+    />
+    <div
+      aria-hidden="true"
+      class="absolute top-1/2 h-3 w-px -translate-y-1/2 bg-stone/50"
+      style="left: 0%;"
+    />
+    <div
+      aria-hidden="true"
+      class="absolute top-1/2 h-3 w-px -translate-y-1/2 bg-stone/50"
+      style="left: 8.333333333333332%;"
+    />
+    <div
+      aria-hidden="true"
+      class="absolute top-1/2 h-3 w-px -translate-y-1/2 bg-stone/50"
+      style="left: 25%;"
+    />
+    <div
+      aria-hidden="true"
+      class="absolute top-1/2 h-3 w-px -translate-y-1/2 bg-stone/50"
+      style="left: 50%;"
+    />
+    <div
+      aria-hidden="true"
+      class="absolute top-1/2 h-3 w-px -translate-y-1/2 bg-stone/50"
+      style="left: 83.33333333333334%;"
+    />
+    <div
+      aria-label="Ваша ставка: 1800 ₽/час"
+      class="absolute top-1/2 -translate-x-1/2 -translate-y-1/2"
+      style="left: 30%;"
+    >
+      <div
+        class="h-4 w-4 rounded-full border border-coral bg-coral shadow-[0_0_0_4px_rgba(233,128,116,0.18)]"
+      />
+    </div>
+  </div>
+  <div
+    class="mt-2 flex justify-between text-[10px] uppercase tracking-[0.22em] text-[#6b6966]"
+  >
+    <span
+      class=""
+    >
+      0
+       ₽
+    </span>
+    <span
+      class=""
+    >
+      500
+       ₽
+    </span>
+    <span
+      class=""
+    >
+      1500
+       ₽
+    </span>
+    <span
+      class=""
+    >
+      3000
+       ₽
+    </span>
+    <span
+      class=""
+    >
+      5000+
+       ₽
+    </span>
+  </div>
+</div>
+`;

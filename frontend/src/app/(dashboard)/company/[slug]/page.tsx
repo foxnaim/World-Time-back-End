@@ -101,7 +101,7 @@ function PresenceWidget({
     return () => clearInterval(id);
   }, []);
 
-  const inOffice = data?.inOffice ?? [];
+  const inOffice = React.useMemo(() => data?.inOffice ?? [], [data?.inOffice]);
   const mapMarkers = React.useMemo(
     () =>
       inOffice

@@ -19,8 +19,6 @@ type Sub = {
   };
 };
 
-const WARN_MS = 7 * 24 * 60 * 60 * 1000;
-
 function daysLeft(iso: string): number {
   const diff = new Date(iso).getTime() - Date.now();
   return Math.ceil(diff / (24 * 60 * 60 * 1000));
