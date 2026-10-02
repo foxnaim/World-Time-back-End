@@ -5,8 +5,25 @@ import { PrismaService } from '@/common/prisma.service';
 import { CheckinService } from '../../checkin/checkin.service';
 import { InviteTokenService } from '../../company/invite-token.service';
 import { checkinMenu, mainMenu } from '../keyboards';
-import { getSession } from '../session';
+import { getSession, type TelegramSession } from '../session';
 import { TelegramErrorsFilter } from './errors.filter';
+
+/**
+ * How long a location shared in the chat may stand in for the scanner's
+ * position. A session lives 24 h, so without a limit one location shared at
+ * the office would pass the geofence for every later scan, from anywhere.
+ * Two minutes covers "send location, then scan the QR at the door"; an older
+ * location is dropped and the bot asks for a new one.
+ */
+export const LOCATION_MAX_AGE_MS = 120_000;
+
+/** The session's last location if it was shared within LOCATION_MAX_AGE_MS. */
+function freshLocation(session: TelegramSession): TelegramSession['lastLocation'] {
+  const location = session.lastLocation;
+  if (!location) return undefined;
+  const age = Date.now() - location.at;
+  return age >= 0 && age <= LOCATION_MAX_AGE_MS ? location : undefined;
+}
 
 function resolveRole(user: any): 'owner' | 'b2b' | 'b2c' | 'both' {
   const employees: Array<{ role: string; status: string }> = user?.employees ?? [];
@@ -61,11 +78,14 @@ export class StartHandler {
     if (payload && payload.startsWith('qr_')) {
       const code = payload.slice(3);
       const session = getSession(user.telegramId);
+      // A stale location counts as none: scan() refuses it where the office
+      // has a geofence, and the catch below asks for a fresh one.
+      const location = freshLocation(session);
       try {
         const result = await this.checkin.scan(user.id, {
           token: code,
-          latitude: session.lastLocation?.lat,
-          longitude: session.lastLocation?.lng,
+          latitude: location?.lat,
+          longitude: location?.lng,
         });
         if (result.type === 'IN') {
           await ctx.reply(

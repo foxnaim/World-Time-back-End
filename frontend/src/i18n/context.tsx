@@ -1,7 +1,7 @@
 'use client';
 
 import * as React from 'react';
-import { DEFAULT_LOCALE, LOCALE_COOKIE, isLocale, type Locale } from './config';
+import { DEFAULT_LOCALE, LOCALE_COOKIE, type Locale } from './config';
 import { createTranslator, type Translator } from './translator';
 import type { Messages } from './messages';
 import ruMessages from './messages/ru.json';

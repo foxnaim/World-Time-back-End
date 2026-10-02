@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useState, useCallback } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import dynamic from 'next/dynamic';
 import type { DialProps } from '@tact/ui';
 import { Clock } from './clock';
@@ -131,9 +131,6 @@ export function QrDisplay({ companyId, companyName }: QrDisplayProps) {
     expiresMs !== null ? Math.max(0, Math.min(rotationMs, expiresMs - tickNow)) : rotationMs;
 
   const remainingSec = Math.ceil(remainingMs / 1000);
-  // Dial fills with coral and drains counterclockwise → progress represents
-  // how much of the current window *remains*.
-  const progress = rotationMs > 0 ? remainingMs / rotationMs : 0;
 
   const qrValue = data?.token ? buildTelegramUrl(data.token) : '';
   const banner = connectionCopy(state);

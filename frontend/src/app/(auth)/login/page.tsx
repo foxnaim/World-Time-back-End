@@ -18,8 +18,6 @@ interface LoginViewProps {
   submitLabel?: string;
   /** Override where we go after successful auth (default: ?next or /dashboard). */
   redirectTo?: string;
-  /** Suffix appended beneath the widget link (e.g. "или зарегистрируй компанию"). */
-  widgetLinkLabel?: string;
 }
 
 interface BotLoginResponse {
@@ -47,7 +45,6 @@ export function LoginView({
   subtitle = `Открой бота @${process.env.NEXT_PUBLIC_BOT_USERNAME ?? 'worktact_bot'} → нажми «Войти» → скопируй код`,
   submitLabel = 'Войти',
   redirectTo,
-  widgetLinkLabel = 'Или войди через Telegram Login Widget',
 }: LoginViewProps) {
   const router = useRouter();
   const search = useSearchParams();

@@ -1,7 +1,6 @@
 import './instrument';
 import 'reflect-metadata';
 import { NestFactory } from '@nestjs/core';
-import { ValidationPipe } from '@nestjs/common';
 import { ZodValidationPipe } from 'nestjs-zod';
 import { Logger } from 'nestjs-pino';
 import helmet from 'helmet';

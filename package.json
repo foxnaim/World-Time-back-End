@@ -10,10 +10,10 @@
     "typecheck": "turbo run typecheck",
     "format": "prettier --write \"**/*.{ts,tsx,js,jsx,json,md,yml,yaml}\"",
     "clean": "turbo run clean",
-    "db:generate": "pnpm --filter @tact/database db:generate",
-    "db:push": "pnpm --filter @tact/database db:push",
-    "db:migrate": "pnpm --filter @tact/database db:migrate",
-    "db:seed": "pnpm --filter @tact/database db:seed",
+    "db:generate": "pnpm --filter @tact/database generate",
+    "db:push": "pnpm --filter @tact/database push",
+    "db:migrate": "pnpm --filter @tact/database migrate",
+    "db:seed": "pnpm --filter @tact/database seed",
     "prepare": "husky"
   },
   "devDependencies": {

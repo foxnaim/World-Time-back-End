@@ -13,7 +13,7 @@ import {
   Res,
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiQuery, ApiResponse, ApiTags } from '@nestjs/swagger';
-import { Prisma } from '@tact/database';
+import { Prisma } from '@prisma/client';
 import type { Response } from 'express';
 import { endOfMonth, startOfMonth } from 'date-fns';
 

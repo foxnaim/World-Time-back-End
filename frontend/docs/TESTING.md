@@ -34,7 +34,7 @@ semantics (navigation, cookies, SSE, service workers) that JSDOM cannot.
 frontend/
 ├── src/__tests__/*.test.{ts,tsx}      # cross-cutting unit tests
 ├── src/**/*.test.{ts,tsx}             # co-located component tests
-├── vitest.config.ts                   # Vitest runner config (JSDOM)
+├── vitest.config.mts                  # Vitest runner config (JSDOM)
 ├── vitest.setup.ts                    # global jest-dom, polyfills
 ├── e2e/*.spec.ts                      # Playwright specs
 ├── e2e/fixtures/auth.ts               # authenticated-state fixture

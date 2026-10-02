@@ -5,7 +5,7 @@ import {
   Logger,
   NotFoundException,
 } from '@nestjs/common';
-import { Prisma } from '@tact/database';
+import { Prisma } from '@prisma/client';
 import type { ProjectMonthlySummary } from '@tact/types';
 import { endOfMonth, parse, startOfMonth } from 'date-fns';
 

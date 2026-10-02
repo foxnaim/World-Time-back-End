@@ -108,17 +108,17 @@ describe('AuthService (service-adjacent spec)', () => {
   });
 
   describe('OTC issue + consume round-trip', () => {
-    it('consume returns the issued telegramId', () => {
+    it('consume returns the issued telegramId', async () => {
       const tg = BigInt(12345);
       const code = service.issueBotOneTimeCode(tg);
       expect(code).toMatch(/^\d{6}$/);
-      expect(service.consumeBotOneTimeCode(code)).toBe(tg);
+      await expect(service.consumeBotOneTimeCode(code)).resolves.toBe(tg);
     });
 
-    it('consume is single-use: second call returns null', () => {
+    it('consume is single-use: second call returns null', async () => {
       const code = service.issueBotOneTimeCode(BigInt(1));
-      expect(service.consumeBotOneTimeCode(code)).not.toBeNull();
-      expect(service.consumeBotOneTimeCode(code)).toBeNull();
+      await expect(service.consumeBotOneTimeCode(code)).resolves.toBe(BigInt(1));
+      await expect(service.consumeBotOneTimeCode(code)).resolves.toBeNull();
     });
   });
 });

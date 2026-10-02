@@ -5,7 +5,10 @@ import {
   OnModuleInit,
   INestApplication,
 } from '@nestjs/common';
-import { PrismaClient } from '@tact/database';
+// From @prisma/client, like every other backend import: @tact/database
+// points its package entry at a dist/ build that never exists, so neither
+// tsc nor Node can resolve it from here.
+import { PrismaClient } from '@prisma/client';
 
 @Injectable()
 export class PrismaService extends PrismaClient implements OnModuleInit, OnModuleDestroy {

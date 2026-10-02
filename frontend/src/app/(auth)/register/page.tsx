@@ -19,7 +19,6 @@ export default function RegisterPage() {
       subtitle={`Открой бота @${process.env.NEXT_PUBLIC_BOT_USERNAME ?? 'worktact_bot'} → нажми «Войти» → введи код здесь`}
       submitLabel="Войти через Telegram"
       redirectTo="/dashboard"
-      widgetLinkLabel="Или войди через Telegram Login Widget"
     />
   );
 }

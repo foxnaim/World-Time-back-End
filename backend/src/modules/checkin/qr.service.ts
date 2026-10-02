@@ -54,10 +54,6 @@ function base64urlDecode(input: string): Buffer {
   return Buffer.from(padded.replace(/-/g, '+').replace(/_/g, '/'), 'base64');
 }
 
-function currentRotationIndex(nowMs = Date.now()): number {
-  return Math.floor(nowMs / (ROTATION_SEC * 1000));
-}
-
 @Injectable()
 export class QrService implements OnModuleInit {
   private readonly logger = new Logger(QrService.name);

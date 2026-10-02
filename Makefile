@@ -54,7 +54,7 @@ test-e2e: ## Run Playwright end-to-end tests against the web app.
 # ---------- Database ----------
 
 db-studio: ## Open Prisma Studio for the database package.
-	@pnpm --filter @tact/database db:studio
+	@pnpm --filter @tact/database studio
 
 db-reset: ## Wipe Postgres volume, bring it back up, push schema, reseed.
 	@docker compose down -v
